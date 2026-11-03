@@ -1,0 +1,18 @@
+{
+  "name": "@workbench/ui",
+  "dependencies": {
+    "@ark-ui/react": "^5.30.0",
+    "@emotion/css": "^11.13.5",
+    "lucide-react": "^0.562.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
