@@ -10,8 +10,6 @@ type BtnSize = 24 | 28 | 30 | 32 | 36
 export const Button = forwardRef<
   HTMLButtonElement,
   HTMLArkProps<'button'> & {
-    primary?: boolean
-    quiet?: boolean
     variant?: BtnVariant
     size?: BtnSize
     active?: boolean
@@ -21,10 +19,8 @@ export const Button = forwardRef<
   (
     {
       className,
-      primary,
-      quiet,
-      variant = primary ? 'solid' : quiet ? 'ghost' : 'outline',
-      size = 30,
+      variant = 'ghost',
+      size,
       active = false,
       icon,
       children,

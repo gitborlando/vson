@@ -1,0 +1,190 @@
+import { SegmentGroup } from '@ark-ui/react'
+import {
+  forwardRef,
+  type CSSProperties,
+  type ComponentPropsWithRef,
+  type ReactNode,
+} from 'react'
+import { css, cx } from '@emotion/css'
+import { classes } from './style-utils'
+import { styles } from './styles'
+
+type SegmentSize = 'sm' | 'md' | 'lg'
+type SegmentVariant = 'solid' | 'outline'
+
+export type SegmentOption = {
+  label: ReactNode
+  value: string
+  title?: string
+  disabled?: boolean
+}
+
+export const Segments = forwardRef<
+  HTMLDivElement,
+  Omit<ComponentPropsWithRef<'div'>, 'onChange'> & {
+    options: SegmentOption[]
+    value?: string
+    defaultValue?: string
+    onChange?: (value: string) => void
+    size?: SegmentSize
+    variant?: SegmentVariant
+    itemWidth?: number
+    disabled?: boolean
+  }
+>(
+  (
+    {
+      className,
+      options,
+      value,
+      defaultValue,
+      onChange,
+      size = 'sm',
+      variant = 'solid',
+      itemWidth,
+      disabled,
+      style,
+      ...rest
+    },
+    ref,
+  ) => {
+    return (
+      <SegmentGroup.Root
+        ref={ref}
+        value={value}
+        defaultValue={defaultValue ?? options[0]?.value}
+        onValueChange={(e) => e.value && onChange?.(e.value)}
+        disabled={disabled}
+        data-fixed-item-width={itemWidth ? true : undefined}
+        style={
+          {
+            ...style,
+            '--segment-item-width': itemWidth ? `${itemWidth}px` : undefined,
+          } as CSSProperties
+        }
+        className={cx(cls(), cls(size), cls(variant), className)}
+        {...rest}>
+        {options.map((option) => (
+          <SegmentGroup.Item
+            key={option.value}
+            value={option.value}
+            title={option.title}
+            disabled={option.disabled}
+            className={cls('item')}>
+            <SegmentGroup.ItemText className={cls('item-text')}>
+              {option.label}
+            </SegmentGroup.ItemText>
+            <SegmentGroup.ItemHiddenInput />
+          </SegmentGroup.Item>
+        ))}
+        <SegmentGroup.Indicator className={cls('indicator')} />
+      </SegmentGroup.Root>
+    )
+  },
+)
+
+const cls = classes(css`
+  @layer local-components {
+    & {
+      width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      background: var(--gray-bg);
+      ${styles.borderRadius}
+      padding: 3px;
+      gap: 2px;
+    }
+
+    /* Size variants */
+    &-sm {
+      height: 24px;
+      font-size: 12px;
+    }
+    &-md {
+      height: 32px;
+      font-size: 13px;
+    }
+    &-lg {
+      height: 36px;
+      font-size: 14px;
+    }
+
+    /* Variant: solid */
+    &-solid &-indicator {
+      background: var(--color);
+    }
+    &-solid &-item[data-state='checked'] {
+      color: var(--color);
+      background-color: white;
+    }
+
+    /* Variant: outline */
+    &-outline {
+      background: transparent;
+      ${styles.border}
+    }
+    &-outline &-indicator {
+      background: var(--gray-bg-hover);
+    }
+    &-outline &-item[data-state='checked'] {
+      color: var(--color);
+    }
+
+    /* Item */
+    &-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      transition: all 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+      height: 100%;
+      border-radius: 4px;
+
+      &:hover:not([data-state='checked']):not([data-disabled]) {
+        color: var(--color);
+      }
+
+      &[data-disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
+    &[data-fixed-item-width] &-item {
+      flex: 0 0 var(--segment-item-width);
+      width: var(--segment-item-width);
+      min-width: var(--segment-item-width);
+      max-width: var(--segment-item-width);
+      padding-inline: 0;
+    }
+
+    &-item-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Indicator (sliding background) */
+    &-indicator {
+      position: absolute;
+      height: calc(100% - 6px);
+      ${styles.borderRadius}
+      transition: left 0.2s ease, width 0.2s ease;
+      z-index: 0;
+    }
+
+    /* Disabled state */
+    &[data-disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+`)

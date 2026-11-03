@@ -1,12 +1,17 @@
-import type { LucideProps } from 'lucide-react'
-import { forwardRef, type FC } from 'react'
+import type { LucideProps, LucideIcon } from 'lucide-react'
+import type { FC } from 'react'
 import { css, cx } from '@emotion/css'
 import { classes } from './style-utils'
 import * as LucideReact from 'lucide-react'
 
-const LucideComp: FC<
-  LucideProps & { icon: React.ForwardRefExoticComponent<any>; active?: boolean }
-> = ({ icon: Icon, className, size = 16, strokeWidth = 1.5, active, ...rest }) => {
+const LucideComp: FC<LucideProps & { icon: LucideIcon; active?: boolean }> = ({
+  icon: Icon,
+  className,
+  size = 16,
+  strokeWidth = 1.5,
+  active,
+  ...rest
+}) => {
   return (
     <Icon
       className={cx(cls(), className)}
