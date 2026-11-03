@@ -4,7 +4,11 @@ export const installTheme = () => injectGlobal`
   :root {
     font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
     font-size: 13px; color: #272a30; background: #f5f6f8;
-    --color: #4b5fc8; --gray-bg: #f3f4f6; --gray-bg-hover: #eceef2;
+    --hue: 280; --color: hsl(280 100% 70%); --gray-bg: #f2f3f4; --gray-bg-hover: #eceef2;
+    --color-bg: hsl(280 100% 93%); --color-bg-half: hsl(280 100% 98%);
+    --gray-border: rgba(138, 138, 138, .15);
+    --border-radius: 6px; --border-radius-sm: 3px;
+    --shadow: 0 0 0 1px #0000000d, 0 4px 10px #0000001a;
     --border: #e7e8ec; --muted: #858a94; --radius: 6px;
   }
   * { box-sizing: border-box; }
