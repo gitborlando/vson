@@ -53,6 +53,8 @@ const cls = classes(css`
       align-items: center;
       justify-content: center;
       gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
       cursor: pointer;
       border: none;
       outline: none;
