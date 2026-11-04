@@ -27,6 +27,7 @@ export interface SelectOptionProps extends Omit<
   defaultValue?: string
   placeholder?: string
   disabled?: boolean
+  autoWidth?: boolean
   trigger?: ReactElement
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
@@ -43,6 +44,7 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
       placeholder,
       label,
       disabled,
+      autoWidth,
       trigger,
       defaultOpen,
       onOpenChange,
@@ -81,6 +83,7 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
         value={value === undefined ? undefined : [value]}
         defaultValue={defaultValue === undefined ? undefined : [defaultValue]}
         disabled={disabled}
+        data-auto-width={autoWidth || undefined}
         defaultOpen={defaultOpen}
         positioning={{
           placement: 'bottom-start',
@@ -149,6 +152,11 @@ const cls = classes(css`
       width: 100%;
       min-width: 0;
       font-size: 12px;
+    }
+    &[data-auto-width] {
+      width: max-content;
+      max-width: 100%;
+      flex-shrink: 1;
     }
 
     &-trigger {
