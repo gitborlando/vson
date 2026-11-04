@@ -42,7 +42,7 @@ const cls = classes(css`
   & {
     height: 100%;
     min-height: 0;
-    font-size: 12px;
+    font-size: var(--vson-font-size);
   }
   & .cm-editor {
     height: 100%;
@@ -50,7 +50,7 @@ const cls = classes(css`
   }
   & .cm-scroller {
     overflow: auto;
-    font-family: 'Cascadia Code', Consolas, monospace;
+    font-family: var(--vson-font-family);
     line-height: 1.8;
   }
   & .cm-gutters {
@@ -71,6 +71,6 @@ const cls = classes(css`
     padding: 8px 10px;
     max-width: 360px;
     line-height: 1.6;
-    font-family: var(--font-family, sans-serif);
+    font-family: var(--vson-font-family);
   }
 `)

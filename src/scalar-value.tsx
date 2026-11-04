@@ -147,6 +147,8 @@ const cls = classes(css`
     overflow: hidden;
     text-overflow: ellipsis;
     font: inherit;
+    height: auto;
+    min-height: 24px;
     color: inherit;
     padding: 1px 4px;
     border-radius: 3px;
@@ -169,7 +171,10 @@ const cls = classes(css`
     min-width: 120px;
     max-width: 360px;
     color: #303746;
-    font-family: inherit;
+    font: inherit;
+  }
+  & > input {
+    height: max(30px, 1.8em);
   }
   &-image {
     width: 30px;

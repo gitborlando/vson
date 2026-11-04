@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { css } from '@emotion/css'
-import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from 'lucide-react'
 import { Button, Select, classes } from '@workbench/ui'
 import {
   initialValue,
@@ -21,7 +21,7 @@ type NodeProps = {
   path: JsonPath
   label?: string | number
   readOnly?: boolean
-  comma?: boolean
+  showAnnotations: boolean
   removable?: boolean
   move?: (direction: -1 | 1) => void
   first?: boolean
@@ -38,7 +38,7 @@ export function JsonNode({
   path,
   label,
   readOnly: inherited,
-  comma,
+  showAnnotations,
   removable,
   move,
   first,
@@ -49,7 +49,6 @@ export function JsonNode({
   onEditIssue,
 }: NodeProps) {
   const [open, setOpen] = useState(path.length < 2)
-  const [adding, setAdding] = useState(false)
   const schema = resolveSchema(input ?? {}, value)
   const readOnly = Boolean(inherited || !input || schema.readOnly)
   const array = Array.isArray(value)
@@ -98,7 +97,7 @@ export function JsonNode({
           <Button
             className={cls('fold')}
             size={24}
-            icon={<ChevronDown size={12} data-open={open} />}
+            icon={open ? <Minus size={12} /> : <Plus size={12} />}
             aria-label={`${pathLabel(path)}${open ? '收起' : '展开'}`}
             aria-expanded={open}
             onClick={() => setOpen(!open)}
@@ -129,25 +128,21 @@ export function JsonNode({
               <>
                 <span className={cls('summary')}> {summary} </span>
                 {array ? ']' : '}'}
-                {comma ? ',' : ''}
               </>
             )}
           </Button>
         ) : (
-          <>
-            <ScalarValue
-              value={value}
-              schema={schema}
-              readOnly={readOnly}
-              label={pathLabel(path)}
-              onChange={(value) => onChange(path, value)}
-              onEditIssue={(message) => onEditIssue(path, message)}
-              onPickImage={onPickImage ? () => onPickImage(path, schema) : undefined}
-            />
-            {comma && <span className={cls('punctuation')}>,</span>}
-          </>
+          <ScalarValue
+            value={value}
+            schema={schema}
+            readOnly={readOnly}
+            label={pathLabel(path)}
+            onChange={(value) => onChange(path, value)}
+            onEditIssue={(message) => onEditIssue(path, message)}
+            onPickImage={onPickImage ? () => onPickImage(path, schema) : undefined}
+          />
         )}
-        {schema.title && (
+        {showAnnotations && schema.title && (
           <span className={cls('annotation')} title={schema.description}>
             {schema.title}
           </span>
@@ -156,6 +151,40 @@ export function JsonNode({
           <span className={cls('badge')}>{input ? '只读' : '扩展字段'}</span>
         )}
         <div className={cls('actions')}>
+          {!readOnly && object && missing.length > 0 && (
+            <Select
+              className={cls('add-field')}
+              label={`${pathLabel(path)}添加字段`}
+              value=''
+              trigger={
+                <Button
+                  icon={<Plus size={12} />}
+                  title='添加字段'
+                  aria-label={`${pathLabel(path)}添加字段`}
+                />
+              }
+              options={missing.map(([key, field]) => ({
+                value: key,
+                label: `${key}${field.title ? ' · ' + field.title : ''}`,
+              }))}
+              onChange={(key) => {
+                const field = schema.properties?.[key]
+                if (!field) return
+                onChange([...path, key], initialValue(field))
+              }}
+            />
+          )}
+          {!readOnly &&
+            array &&
+            arrayItem &&
+            entries.length < (schema.maxItems ?? Infinity) && (
+              <Button
+                icon={<Plus size={12} />}
+                title='添加项目'
+                aria-label={`${pathLabel(path)}添加项目`}
+                onClick={() => onChange(path, [...value, initialValue(arrayItem)])}
+              />
+            )}
           {!readOnly && variants && (
             <Select
               label={`${pathLabel(path)}数据形式`}
@@ -213,7 +242,7 @@ export function JsonNode({
                 path={[...path, key]}
                 label={key}
                 readOnly={readOnly}
-                comma={index < entries.length - 1}
+                showAnnotations={showAnnotations}
                 removable={
                   array
                     ? !Array.isArray(schema.items) &&
@@ -239,54 +268,8 @@ export function JsonNode({
                 onEditIssue={onEditIssue}
               />
             ))}
-            {!readOnly && object && missing.length > 0 && (
-              <div className={cls('add')}>
-                {adding ? (
-                  <Select
-                    label={`${pathLabel(path)}添加字段`}
-                    placeholder='选择可选字段'
-                    value=''
-                    options={missing.map(([key, field]) => ({
-                      value: key,
-                      label: `${key}${field.title ? ' · ' + field.title : ''}`,
-                    }))}
-                    onChange={(key) => {
-                      const field = schema.properties?.[key]
-                      if (!field) return
-                      onChange([...path, key], initialValue(field))
-                      setAdding(false)
-                    }}
-                  />
-                ) : (
-                  <Button
-                    size={24}
-                    icon={<Plus size={11} />}
-                    onClick={() => setAdding(true)}>
-                    添加字段
-                  </Button>
-                )}
-              </div>
-            )}
-            {!readOnly &&
-              array &&
-              arrayItem &&
-              entries.length < (schema.maxItems ?? Infinity) && (
-                <div className={cls('add')}>
-                  <Button
-                    size={24}
-                    icon={<Plus size={11} />}
-                    onClick={() =>
-                      onChange(path, [...value, initialValue(arrayItem)])
-                    }>
-                    添加项目
-                  </Button>
-                </div>
-              )}
           </div>
-          <div className={cls('closing')}>
-            {array ? ']' : '}'}
-            {comma ? ',' : ''}
-          </div>
+          <div className={cls('closing')}>{array ? ']' : '}'}</div>
         </>
       )}
     </div>
@@ -317,16 +300,13 @@ const cls = classes(css`
   &-fold {
     color: #9198a5;
   }
-  &-fold svg[data-open='false'] {
-    rotate: -90deg;
-  }
   &-key {
     color: #526582;
     white-space: nowrap;
   }
   &-index {
     color: #b3bac5;
-    font-size: 9px;
+    font-size: 0.75em;
     margin-right: 3px;
   }
   &-punctuation,
@@ -335,17 +315,18 @@ const cls = classes(css`
   }
   &-bracket {
     font: inherit;
+    height: auto;
+    min-height: 24px;
     padding-inline: 1px;
   }
   &-summary {
     color: #8d96a5;
-    font-size: 11px;
+    font-size: 0.92em;
   }
   &-annotation {
     margin-left: 8px;
     color: #9ba3af;
-    font-family: var(--font-family, sans-serif);
-    font-size: 10px;
+    font-size: 0.84em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -353,7 +334,7 @@ const cls = classes(css`
   }
   &-badge {
     color: #a5acb7;
-    font-size: 9px;
+    font-size: 0.75em;
     margin-left: 4px;
     white-space: nowrap;
   }
@@ -365,33 +346,35 @@ const cls = classes(css`
   &-closing {
     color: #8b94a3;
     padding-left: 21px;
-    line-height: 26px;
+    line-height: max(26px, 1.8em);
   }
   &-actions {
     margin-left: auto;
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
     opacity: 0;
   }
   &-actions > [data-scope='select'] {
     width: 125px;
-    font-family: sans-serif;
+    font: inherit;
+  }
+  &-actions > &-add-field {
+    width: 24px;
   }
   &-line:hover &-actions,
-  &-line:focus-within &-actions {
+  &-line:focus-within &-actions,
+  &-actions:has([data-state='open']) {
     opacity: 1;
+  }
+  @media (hover: none) {
+    &-actions {
+      opacity: 1;
+    }
   }
   &-actions:empty {
     display: none;
-  }
-  &-add {
-    padding-left: 18px;
-    color: #9a82b9;
-    max-width: 310px;
-  }
-  &-add > button {
-    font-size: 10px;
   }
   &[data-invalid] > &-line {
     background: #fff6f5;
@@ -399,7 +382,6 @@ const cls = classes(css`
   &-error {
     margin: 2px 0 4px 22px;
     color: #b54242;
-    font-size: 10px;
-    font-family: sans-serif;
+    font-size: 0.84em;
   }
 `)

@@ -1,12 +1,21 @@
 import { useMemo, useRef, useState } from 'react'
 import { css } from '@emotion/css'
-import { Braces, Code2, ListCollapse, WrapText } from 'lucide-react'
-import { Button, Segments, classes } from '@workbench/ui'
+import {
+  Braces,
+  Code2,
+  ListCollapse,
+  MessageSquareText,
+  Minus,
+  Plus,
+  WrapText,
+} from 'lucide-react'
+import { Button, Segments, classes, withCssVars } from '@workbench/ui'
 import { CodeView } from './code-view'
 import { editJson, inspectJson } from './document'
 import { JsonNode } from './json-node'
 import { MediaPicker } from './media-picker'
 import { pathLabel } from './schema'
+import { useAppearance } from './use-appearance'
 import type { JsonPath, VsonInspection, VsonMediaAdapter, VsonSchema } from './types'
 
 export function VsonEditor({
@@ -33,6 +42,7 @@ export function VsonEditor({
   const inspect = suppliedInspect ?? ((text: string) => inspectJson(text, schema))
   const inspection = useMemo(() => inspect(value), [value, inspect])
   const [treeVersion, setTreeVersion] = useState(0)
+  const [appearance, setAppearance] = useAppearance()
   const [mediaTarget, setMediaTarget] = useState<{
     path: JsonPath
     schema: VsonSchema
@@ -63,6 +73,9 @@ export function VsonEditor({
   return (
     <div
       className={cls()}
+      style={withCssVars(undefined, {
+        '--vson-font-size': `${appearance.fontSize}px`,
+      })}
       data-vson-editor
       onKeyDownCapture={(event) => {
         if (!history || interaction.error || !(event.ctrlKey || event.metaKey))
@@ -106,6 +119,53 @@ export function VsonEditor({
           ]}
         />
         <div className={cls('tools')}>
+          <div className={cls('font-size')} role='group' aria-label='编辑器字号'>
+            <Button
+              size={24}
+              icon={<Minus size={12} />}
+              title='缩小字号'
+              aria-label='缩小字号'
+              disabled={appearance.fontSize <= 10}
+              onClick={() =>
+                setAppearance((current) => ({
+                  ...current,
+                  fontSize: current.fontSize - 1,
+                }))
+              }
+            />
+            <output aria-live='polite' aria-label='当前字号'>
+              {appearance.fontSize}px
+            </output>
+            <Button
+              size={24}
+              icon={<Plus size={12} />}
+              title='放大字号'
+              aria-label='放大字号'
+              disabled={appearance.fontSize >= 24}
+              onClick={() =>
+                setAppearance((current) => ({
+                  ...current,
+                  fontSize: current.fontSize + 1,
+                }))
+              }
+            />
+          </div>
+          {mode === 'structure' && (
+            <Button
+              size={24}
+              icon={<MessageSquareText size={13} />}
+              title={appearance.showAnnotations ? '隐藏字段注释' : '显示字段注释'}
+              aria-label='显示字段注释'
+              aria-pressed={appearance.showAnnotations}
+              active={appearance.showAnnotations}
+              onClick={() =>
+                setAppearance((current) => ({
+                  ...current,
+                  showAnnotations: !current.showAnnotations,
+                }))
+              }
+            />
+          )}
           {mode === 'structure' && (
             <Button
               size={24}
@@ -142,6 +202,7 @@ export function VsonEditor({
               path={[]}
               value={inspection.value}
               issues={inspection.issues}
+              showAnnotations={appearance.showAnnotations}
               onEditIssue={(path, error) => {
                 const key = JSON.stringify(path)
                 if (error) fieldErrors.current.set(key, error)
@@ -214,6 +275,7 @@ export function VsonEditor({
 
 const cls = classes(css`
   & {
+    --vson-font-family: 'Cascadia Code', Consolas, 'Microsoft YaHei', monospace;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -224,6 +286,7 @@ const cls = classes(css`
   &-toolbar {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     min-height: 42px;
     padding: 6px 12px;
@@ -251,6 +314,20 @@ const cls = classes(css`
     margin-left: auto;
     color: #8e97a6;
   }
+  &-font-size {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  &-font-size output {
+    min-width: 32px;
+    text-align: center;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    color: #626e80;
+  }
   &-body {
     flex: 1;
     min-height: 0;
@@ -260,11 +337,7 @@ const cls = classes(css`
     height: 100%;
     overflow: auto;
     padding: 12px 10px 24px;
-    font:
-      12px/1.8 'Cascadia Code',
-      Consolas,
-      'Microsoft YaHei',
-      monospace;
+    font: var(--vson-font-size)/1.8 var(--vson-font-family);
   }
   &-invalid {
     height: 100%;
