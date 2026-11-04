@@ -7,11 +7,13 @@ export function Switch({
   onChange,
   children,
   disabled,
+  'aria-label': ariaLabel,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
   children?: ReactNode
   disabled?: boolean
+  'aria-label'?: string
 }) {
   return (
     <ArkSwitch.Root
@@ -23,7 +25,7 @@ export function Switch({
       <ArkSwitch.Control className={cls('control')}>
         <ArkSwitch.Thumb className={cls('thumb')} />
       </ArkSwitch.Control>
-      <ArkSwitch.HiddenInput />
+      <ArkSwitch.HiddenInput aria-label={ariaLabel} />
     </ArkSwitch.Root>
   )
 }
@@ -46,6 +48,11 @@ const cls = classes(css`
     flex-shrink: 0;
     background: #d8dce5;
     border-radius: 20px;
+    transition: background 0.15s;
+  }
+  &:focus-within &-control {
+    outline: 2px solid var(--color);
+    outline-offset: 2px;
   }
   &-control[data-state='checked'] {
     background: var(--color);
