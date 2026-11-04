@@ -53,6 +53,8 @@ export type VsonInspection = {
 
 export type VsonMediaItem = { id: string; name: string; url: string }
 export type VsonMediaAdapter = {
+  /** 使用就近弹窗模拟选图，仅本地预览，不上传或写入配置。 */
+  previewOnly?: boolean
   unavailableReason?: string
   list: (signal: AbortSignal) => Promise<VsonMediaItem[]>
   upload: (file: File, kind?: string) => Promise<VsonMediaItem>

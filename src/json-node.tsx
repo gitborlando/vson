@@ -45,6 +45,7 @@ type NodeProps = {
   onChange: (path: JsonPath, value: JsonValue | undefined) => string
   onAdd: (path: JsonPath, value: JsonValue, target?: JsonPath) => void
   onPickImage?: (path: JsonPath, schema: VsonSchema) => void
+  imagePreviewOnly?: boolean
   onEditIssue: (path: JsonPath, message: string) => void
 }
 
@@ -68,6 +69,7 @@ export function JsonNode({
   onChange,
   onAdd,
   onPickImage,
+  imagePreviewOnly,
   onEditIssue,
 }: NodeProps) {
   const open =
@@ -190,6 +192,7 @@ export function JsonNode({
       onChange={onChange}
       onAdd={onAdd}
       onPickImage={onPickImage}
+      imagePreviewOnly={imagePreviewOnly}
       onEditIssue={onEditIssue}
     />
   )
@@ -262,6 +265,7 @@ export function JsonNode({
             onChange={(value) => onChange(path, value)}
             onEditIssue={(message) => onEditIssue(path, message)}
             onPickImage={onPickImage ? () => onPickImage(path, schema) : undefined}
+            imagePreviewOnly={imagePreviewOnly}
           />
         )}
         <div className={cls('actions')}>

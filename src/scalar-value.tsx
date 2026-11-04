@@ -3,6 +3,7 @@ import { css } from '@emotion/css'
 import { CircleAlert, ImagePlus } from 'lucide-react'
 import { Button, Input, OssImage, Select, Switch, classes } from '@workbench/ui'
 import type { JsonValue, VsonSchema } from './types'
+import { ImagePreviewPopover } from './image-preview-popover'
 
 export function ScalarValue({
   value,
@@ -13,6 +14,7 @@ export function ScalarValue({
   onFocusHandled,
   onChange,
   onPickImage,
+  imagePreviewOnly,
   onEditIssue,
 }: {
   value: JsonValue
@@ -23,6 +25,7 @@ export function ScalarValue({
   onFocusHandled: () => void
   onChange: (value: JsonValue) => string
   onPickImage?: () => void
+  imagePreviewOnly?: boolean
   onEditIssue: (message: string) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -104,7 +107,7 @@ export function ScalarValue({
       ref={element}
       className={cls()}
       data-type={value === null ? 'null' : typeof value}>
-      {image && value && (
+      {image && value && (!imagePreviewOnly || readOnly || fixed) && (
         <OssImage className={cls('image')} src={value} alt={schema.title ?? label} />
       )}
       <span className={cls('field')}>
@@ -185,14 +188,21 @@ export function ScalarValue({
           </span>
         )}
       </span>
-      {image && !readOnly && onPickImage && (
-        <Button
-          icon={<ImagePlus size={13} />}
-          title='选择或上传图片'
-          aria-label={`${label}选择或上传图片`}
-          onClick={onPickImage}
-        />
-      )}
+      {image &&
+        !readOnly &&
+        !fixed &&
+        (imagePreviewOnly ? (
+          <ImagePreviewPopover value={value} label={schema.title ?? label} />
+        ) : (
+          onPickImage && (
+            <Button
+              icon={<ImagePlus size={13} />}
+              title='选择或上传图片'
+              aria-label={`${label}选择或上传图片`}
+              onClick={onPickImage}
+            />
+          )
+        ))}
     </span>
   )
 }

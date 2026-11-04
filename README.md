@@ -52,6 +52,8 @@ function Example() {
 - 代码视图复用 CodeMirror，提供 JSON 高亮、字段和枚举补全、说明悬浮提示、错误标记与行号。格式化不接受语法错误、重复键或非有限数字，以免静默损失内容。
 - `inspectJson(text, schema, base)` 返回问题及文本位置；提供 `base` 时也检查只读字段变化。`inspect` 接口可补充业务校验，返回同一 `VsonInspection` 结构。
 - `media` 注入异步 `list(signal)` 和 `upload(file, kind)`。组件只消费通用 `{id,name,url}` 数据；不内置任何业务 URL 或 OSS 路径。`unavailableReason` 可解释暂不可用原因。
+- `media.previewOnly: true` 启用图片字段的就近弹窗模拟：按钮旁显示图片，空值或加载失败显示灰色矩形与居中加号，内留 12px。整个窗口可点击选图，本地文件仅作临时预览，不请求素材或上传接口，不写 JSON、历史或业务草稿；选图后标记“本地预览”，字段值改变或卸载时释放临时地址。普通图片模式保留素材选择与上传。
+- 本地预览模拟选图后先显示 900ms 的 3/4 圆旋转 loading，期间禁用重复选图，结束后显示本地图片；字段变化或卸载会清理计时器。
 - `onInteractionChange` 报告上传状态、尚未提交/不合法的字段输入及待补全结构；调用方应在忙碌或有输入问题时阻止应用。上传立即由适配器执行；将链接写入业务配置的时机由调用方决定。
 - 可选 `history` 接管局部编辑的撤销重做快捷键；不提供时，代码视图使用 CodeMirror 自带历史。
 - 可用 `expansion` / `onExpansionChange` 控制结构展开状态；不传时由组件内部管理。`onChange(text, expansion)` 同时给出此次改值后的展开状态，包括新增时自动展开的祖先。调用方可在值历史中保存修改前后视图，撤销/重做一起恢复；纯展开/收起通过 `onExpansionChange` 通知，不触发 `onChange`，无需新增历史步骤。

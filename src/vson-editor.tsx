@@ -359,8 +359,9 @@ export function VsonEditor({
               }}
               onChange={changeStructure}
               onAdd={addStructure}
+              imagePreviewOnly={media?.previewOnly}
               onPickImage={
-                media
+                media && !media.previewOnly
                   ? (path, schema) => setMediaTarget({ path, schema, source: text })
                   : undefined
               }
@@ -393,7 +394,7 @@ export function VsonEditor({
           )}
         </div>
       )}
-      {media && mediaTarget && (
+      {media && !media.previewOnly && mediaTarget && (
         <MediaPicker
           adapter={media}
           kind={mediaTarget.schema.mediaKind}
