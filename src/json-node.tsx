@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { css } from '@emotion/css'
-import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, CircleAlert, Minus, Plus, Trash2 } from 'lucide-react'
 import { Button, Select, classes } from '@workbench/ui'
 import {
   initialValue,
@@ -15,6 +15,9 @@ import {
 import { ScalarValue } from './scalar-value'
 import type { JsonPath, JsonValue, VsonIssue, VsonSchema } from './types'
 
+export type TreeExpansion = { all: boolean; paths: Record<string, boolean> }
+export type FocusRequest = { id: number; path: JsonPath }
+
 type NodeProps = {
   value: JsonValue
   schema?: VsonSchema
@@ -22,7 +25,10 @@ type NodeProps = {
   label?: string | number
   readOnly?: boolean
   showAnnotations: boolean
-  expansion: { version: number; open: boolean }
+  expansion: TreeExpansion
+  onToggle: (path: JsonPath, open: boolean) => void
+  focusRequest?: FocusRequest
+  onFocusHandled: () => void
   inline?: boolean
   removable?: boolean
   move?: (direction: -1 | 1) => void
@@ -30,7 +36,7 @@ type NodeProps = {
   last?: boolean
   issues: VsonIssue[]
   onChange: (path: JsonPath, value: JsonValue | undefined) => string
-  onAdd: (path: JsonPath, value: JsonValue) => void
+  onAdd: (path: JsonPath, value: JsonValue, target?: JsonPath) => void
   onPickImage?: (path: JsonPath, schema: VsonSchema) => void
   onEditIssue: (path: JsonPath, message: string) => void
 }
@@ -43,6 +49,9 @@ export function JsonNode({
   readOnly: inherited,
   showAnnotations,
   expansion,
+  onToggle,
+  focusRequest,
+  onFocusHandled,
   inline,
   removable,
   move,
@@ -54,15 +63,10 @@ export function JsonNode({
   onPickImage,
   onEditIssue,
 }: NodeProps) {
-  const [localExpansion, setLocalExpansion] = useState({
-    version: expansion.version,
-    open: expansion.version ? expansion.open : !inline && path.length < 2,
-  })
   const open =
-    localExpansion.version === expansion.version
-      ? localExpansion.open
-      : expansion.open
-  const toggle = () => setLocalExpansion({ version: expansion.version, open: !open })
+    expansion.paths[JSON.stringify(path)] ?? (expansion.all || path.length < 2)
+  const toggle = () => onToggle(path, !open)
+  const row = useRef<HTMLDivElement>(null)
   const [actionError, setActionError] = useState('')
   const change = (path: JsonPath, value: JsonValue | undefined) => {
     const message = onChange(path, value)
@@ -74,6 +78,20 @@ export function JsonNode({
   const array = Array.isArray(value)
   const object = isObject(value)
   const container = array || object
+  const focused = focusRequest && sameJson(focusRequest.path, path)
+  useEffect(() => {
+    if (!focused || !container) return
+    const frame = requestAnimationFrame(() => {
+      row.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      row.current
+        ?.querySelector<HTMLButtonElement>(
+          '[data-add-field] button, button[data-add-item]',
+        )
+        ?.focus({ preventScroll: true })
+      onFocusHandled()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [focusRequest?.id, focused, container])
   const arrayItem = !Array.isArray(schema.items) ? schema.items : undefined
   const entries: [string | number, JsonValue][] = array
     ? value.map((item, index) => [index, item])
@@ -120,6 +138,9 @@ export function JsonNode({
       readOnly={readOnly}
       showAnnotations={showAnnotations}
       expansion={expansion}
+      onToggle={onToggle}
+      focusRequest={focusRequest}
+      onFocusHandled={onFocusHandled}
       inline={inline}
       removable={
         array
@@ -155,7 +176,7 @@ export function JsonNode({
       data-inline={inline || undefined}
       data-readonly={readOnly || undefined}
       data-invalid={Boolean(problem.length) || undefined}>
-      <div className={cls('line')}>
+      <div ref={row} className={cls('line')}>
         {foldable ? (
           <Button
             className={cls('fold')}
@@ -210,6 +231,8 @@ export function JsonNode({
             schema={schema}
             readOnly={readOnly}
             label={pathLabel(path)}
+            focusRequest={focused ? focusRequest?.id : undefined}
+            onFocusHandled={onFocusHandled}
             onChange={(value) => onChange(path, value)}
             onEditIssue={(message) => onEditIssue(path, message)}
             onPickImage={onPickImage ? () => onPickImage(path, schema) : undefined}
@@ -223,10 +246,26 @@ export function JsonNode({
         {readOnly && (
           <span className={cls('badge')}>{input ? '只读' : '扩展字段'}</span>
         )}
+        {(problem.length > 0 || actionError) && (
+          <span
+            className={cls('error')}
+            role='alert'
+            title={[...problem.map((issue) => issue.message), actionError]
+              .filter(Boolean)
+              .join('；')}>
+            <CircleAlert size={12} aria-hidden='true' />
+            <span className={cls('error-text')}>
+              {[...problem.map((issue) => issue.message), actionError]
+                .filter(Boolean)
+                .join('；')}
+            </span>
+          </span>
+        )}
         <div className={cls('actions')}>
           {!readOnly && object && missing.length > 0 && (
             <Select
               className={cls('add-field')}
+              data-add-field
               label={`${pathLabel(path)}添加字段`}
               value=''
               trigger={
@@ -254,8 +293,15 @@ export function JsonNode({
               <Button
                 icon={<Plus size={12} />}
                 title='添加项目'
+                data-add-item
                 aria-label={`${pathLabel(path)}添加项目`}
-                onClick={() => onAdd(path, [...value, initialValue(arrayItem)])}
+                onClick={() =>
+                  onAdd(
+                    path,
+                    [...value, initialValue(arrayItem)],
+                    [...path, entries.length],
+                  )
+                }
               />
             )}
           {!readOnly && variants && (
@@ -297,16 +343,6 @@ export function JsonNode({
           )}
         </div>
       </div>
-      {problem.map((issue, index) => (
-        <p key={index} role='alert' className={cls('error')}>
-          {issue.message}
-        </p>
-      ))}
-      {actionError && (
-        <p role='alert' className={cls('error')}>
-          {actionError}
-        </p>
-      )}
       {open && foldable && (
         <>
           <div className={cls('children')}>
@@ -336,7 +372,7 @@ const cls = classes(css`
   &-line {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 6px;
     min-height: 30px;
     padding-right: 6px;
     border-radius: 4px;
@@ -356,6 +392,7 @@ const cls = classes(css`
   &-key {
     color: #526582;
     white-space: nowrap;
+    padding-right: 2px;
   }
   &-index {
     color: #b3bac5;
@@ -433,8 +470,20 @@ const cls = classes(css`
     background: #fff6f5;
   }
   &-error {
-    margin: 2px 0 4px 22px;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
     color: #b54242;
     font-size: 0.84em;
+  }
+  &-error-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 `)

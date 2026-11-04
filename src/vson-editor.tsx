@@ -11,9 +11,16 @@ import {
 import { Button, Segments, classes } from '@workbench/ui'
 import { CodeView } from './code-view'
 import { editJson, inspectJson } from './document'
-import { JsonNode } from './json-node'
+import { JsonNode, type FocusRequest, type TreeExpansion } from './json-node'
 import { MediaPicker } from './media-picker'
-import { pathLabel, sameJson, valueAt } from './schema'
+import {
+  isObject,
+  pathLabel,
+  resolveSchema,
+  sameJson,
+  schemaAt,
+  valueAt,
+} from './schema'
 import { useAppearance } from './use-appearance'
 import type {
   JsonPath,
@@ -52,7 +59,12 @@ export function VsonEditor({
   const text = structureDraft?.text ?? value
   const inspection = useMemo(() => inspect(text), [text, inspect])
   const [treeVersion, setTreeVersion] = useState(0)
-  const [expansion, setExpansion] = useState({ version: 0, open: true })
+  const [expansion, setExpansion] = useState<TreeExpansion>({
+    all: false,
+    paths: {},
+  })
+  const [focusRequest, setFocusRequest] = useState<FocusRequest>()
+  const focusId = useRef(0)
   const [appearance, setAppearance] = useAppearance()
   const [mediaTarget, setMediaTarget] = useState<{
     path: JsonPath
@@ -108,18 +120,53 @@ export function VsonEditor({
       const related = path
         .slice(0, Math.min(path.length, issue.path.length))
         .every((part, index) => part === issue.path[index])
-      return (
-        related ||
-        !inspection.issues.some(
-          (existing) =>
-            existing.message === issue.message &&
-            sameJson(existing.path, issue.path),
-        )
+      const unchanged = inspection.issues.some(
+        (existing) =>
+          existing.message === issue.message && sameJson(existing.path, issue.path),
       )
+      // 父级已有问题可以逐字段修正，固定标记切换等新问题仍必须拒绝。
+      const withinField = issue.path.length >= path.length && related
+      return withinField || !unchanged
     })
     if (problems.length) return problems.map((issue) => issue.message).join('；')
     writeStructure(next, result)
     return ''
+  }
+  const addStructure = (path: JsonPath, nextValue: JsonValue, target = path) => {
+    if (structureDraft && structureDraft.source !== value) return
+    const next = editJson(latest.current.value, path, nextValue)
+    const result = inspect(next)
+    writeStructure(next, result)
+    const findEditable = (path: JsonPath): JsonPath | undefined => {
+      const field = resolveSchema(
+        schemaAt(schema, result.value, path) ?? {},
+        valueAt(result.value, path),
+      )
+      if (field.readOnly || field.const !== undefined || field.enum?.length === 1)
+        return
+      const current = valueAt(result.value, path)
+      if (current === undefined) return
+      const keys = Array.isArray(current)
+        ? current.map((_, index) => index)
+        : isObject(current)
+          ? Object.keys(current)
+          : undefined
+      if (!keys) return path
+      for (const key of keys) {
+        const editable = findEditable([...path, key])
+        if (editable) return editable
+      }
+      return path
+    }
+    const focusPath = findEditable(target) ?? target
+    setExpansion((current) => {
+      const paths = { ...current.paths }
+      for (let length = 0; length <= focusPath.length; length++) {
+        paths[JSON.stringify(focusPath.slice(0, length))] = true
+      }
+      return { ...current, paths }
+    })
+    setFocusRequest({ id: ++focusId.current, path: focusPath })
   }
   const format = () => {
     if (!inspection.syntaxValid || inspection.value === undefined) return
@@ -188,34 +235,18 @@ export function VsonEditor({
             />
           )}
           {mode === 'structure' && (
-            <>
-              <Button
-                size={24}
-                icon={<ListTree size={13} />}
-                title='全部展开'
-                aria-label='全部展开'
-                disabled={interaction.busy}
-                onClick={() =>
-                  setExpansion((current) => ({
-                    version: current.version + 1,
-                    open: true,
-                  }))
-                }
-              />
-              <Button
-                size={24}
-                icon={<ListCollapse size={13} />}
-                title='全部收起'
-                aria-label='全部收起'
-                disabled={interaction.busy || fieldErrors.current.size > 0}
-                onClick={() =>
-                  setExpansion((current) => ({
-                    version: current.version + 1,
-                    open: false,
-                  }))
-                }
-              />
-            </>
+            <Button
+              size={24}
+              icon={
+                expansion.all ? <ListCollapse size={13} /> : <ListTree size={13} />
+              }
+              title={expansion.all ? '收起到第二级' : '全部展开'}
+              aria-label={expansion.all ? '收起到第二级' : '全部展开'}
+              disabled={interaction.busy}
+              onClick={() =>
+                setExpansion((current) => ({ all: !current.all, paths: {} }))
+              }
+            />
           )}
           <Button
             size={24}
@@ -265,6 +296,14 @@ export function VsonEditor({
               issues={inspection.issues}
               showAnnotations={appearance.showAnnotations}
               expansion={expansion}
+              focusRequest={focusRequest}
+              onFocusHandled={() => setFocusRequest(undefined)}
+              onToggle={(path, open) =>
+                setExpansion((current) => ({
+                  ...current,
+                  paths: { ...current.paths, [JSON.stringify(path)]: open },
+                }))
+              }
               onEditIssue={(path, error) => {
                 const key = JSON.stringify(path)
                 if (error) fieldErrors.current.set(key, error)
@@ -272,10 +311,7 @@ export function VsonEditor({
                 reportErrors()
               }}
               onChange={changeStructure}
-              onAdd={(path, value) => {
-                const next = editJson(latest.current.value, path, value)
-                writeStructure(next, inspect(next))
-              }}
+              onAdd={addStructure}
               onPickImage={
                 media
                   ? (path, schema) => setMediaTarget({ path, schema, source: text })
