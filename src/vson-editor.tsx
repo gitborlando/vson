@@ -15,6 +15,7 @@ import { JsonNode, type FocusRequest, type TreeExpansion } from './json-node'
 import { MediaPicker } from './media-picker'
 import {
   isObject,
+  matchesType,
   pathLabel,
   resolveSchema,
   sameJson,
@@ -113,8 +114,24 @@ export function VsonEditor({
   const changeStructure = (path: JsonPath, nextValue: JsonValue | undefined) => {
     if (structureDraft && structureDraft.source !== value)
       return '原 JSON 已变化，请先放弃本轮结构修改再重试'
-    if (sameJson(nextValue, valueAt(inspection.value, path))) return ''
-    const next = editJson(latest.current.value, path, nextValue)
+    const parentPath = path.slice(0, -1)
+    const key = path.at(-1)
+    const parent = resolveSchema(
+      schemaAt(schema, inspection.value, parentPath) ?? {},
+      valueAt(inspection.value, parentPath),
+    )
+    const field = schemaAt(schema, inspection.value, path)
+    const removeFalse =
+      nextValue === false &&
+      typeof key === 'string' &&
+      isObject(valueAt(inspection.value, parentPath)) &&
+      !parent.required?.includes(key) &&
+      field &&
+      !field.readOnly &&
+      matchesType(resolveSchema(field, false), false)
+    const normalized = removeFalse ? undefined : nextValue
+    if (sameJson(normalized, valueAt(inspection.value, path))) return ''
+    const next = editJson(latest.current.value, path, normalized)
     const result = inspect(next)
     const problems = result.issues.filter((issue) => {
       const related = path

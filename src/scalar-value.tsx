@@ -1,15 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { css } from '@emotion/css'
 import { CircleAlert, ImagePlus } from 'lucide-react'
-import {
-  Button,
-  Input,
-  OssImage,
-  Select,
-  Switch,
-  classes,
-  withCssVars,
-} from '@workbench/ui'
+import { Button, Input, OssImage, Select, Switch, classes } from '@workbench/ui'
 import type { JsonValue, VsonSchema } from './types'
 
 export function ScalarValue({
@@ -126,15 +118,11 @@ export function ScalarValue({
             />
           </span>
         ) : editing && !readOnly ? (
-          <span
-            className={cls('editor')}
-            data-invalid={Boolean(error) || undefined}
-            style={withCssVars(undefined, {
-              '--vson-input-width': `${Math.min(34, Math.max(10, draft.length + 2))}ch`,
-            })}>
+          <span className={cls('editor')} data-invalid={Boolean(error) || undefined}>
             {choices ? (
               <Select
                 defaultOpen
+                autoWidth
                 label={label}
                 value={JSON.stringify(value)}
                 options={choices.map((choice, index) => ({
@@ -147,29 +135,33 @@ export function ScalarValue({
                 }}
               />
             ) : (
-              <Input
-                autoFocus
-                aria-label={label}
-                aria-invalid={Boolean(error) || undefined}
-                aria-describedby={error ? errorId : undefined}
-                inputMode={typeof value === 'number' ? 'decimal' : undefined}
-                value={draft}
-                onFocus={(event) => event.currentTarget.select()}
-                onChange={(event) => {
-                  setDraft(event.target.value)
-                  setError('')
-                  onEditIssue('字段输入尚未确认，请按 Enter 或移出输入框')
-                }}
-                onBlur={() => commit(true)}
-                onKeyDown={(event) => {
-                  if (event.nativeEvent.isComposing) return
-                  if (event.key !== 'Enter' && event.key !== 'Escape') return
-                  event.preventDefault()
-                  event.stopPropagation()
-                  if (event.key === 'Escape') cancel()
-                  else commit(false)
-                }}
-              />
+              <>
+                <span className={cls('measure')} aria-hidden='true'>
+                  {draft || ' '}
+                </span>
+                <Input
+                  autoFocus
+                  aria-label={label}
+                  aria-invalid={Boolean(error) || undefined}
+                  aria-describedby={error ? errorId : undefined}
+                  inputMode={typeof value === 'number' ? 'decimal' : undefined}
+                  value={draft}
+                  onChange={(event) => {
+                    setDraft(event.target.value)
+                    setError('')
+                    onEditIssue('字段输入尚未确认，请按 Enter 或移出输入框')
+                  }}
+                  onBlur={() => commit(true)}
+                  onKeyDown={(event) => {
+                    if (event.nativeEvent.isComposing) return
+                    if (event.key !== 'Enter' && event.key !== 'Escape') return
+                    event.preventDefault()
+                    event.stopPropagation()
+                    if (event.key === 'Escape') cancel()
+                    else commit(false)
+                  }}
+                />
+              </>
             )}
           </span>
         ) : (
@@ -258,52 +250,77 @@ const cls = classes(css`
     gap: 0;
   }
   &-editor {
-    display: inline-flex;
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
-    width: fit-content;
-    max-width: 100%;
+    width: max-content;
+    min-width: 5ch;
+    max-width: min(420px, 100%);
     height: 24px;
     padding: 0;
     line-height: 20px;
     border: 1px solid #dce1ea;
-    border-radius: 6px;
-    background: #fff;
+    border-radius: 4px;
+    background: #fafbfd;
     color: #394457;
-    box-shadow: 0 1px 2px #24365305;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
+    box-shadow: none;
+    transition: border-color 0.15s;
   }
   &-editor:focus-within {
-    border-color: #a6add4;
-    box-shadow: none;
+    border-color: #a4afc1;
+    background: #fff;
   }
   &-editor[data-invalid] {
     border-color: #dba8a2;
     box-shadow: none;
   }
   &-editor > input {
-    width: var(--vson-input-width);
+    position: absolute;
+    inset: 0;
+    width: 100%;
     min-width: 0;
-    max-width: 360px;
     height: 22px;
-    padding: 0 7px;
+    padding: 0 8px;
     background: transparent;
     font: inherit;
     color: inherit;
     border: 0;
     outline: 0;
+    outline-offset: 0;
+    border-radius: 3px;
     box-shadow: none;
   }
+  &-editor > input:focus,
+  &-editor > input:focus-visible {
+    background: transparent;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+  }
+  &-measure {
+    grid-area: 1 / 1;
+    min-width: 0;
+    height: 22px;
+    padding-inline: 8px;
+    font: inherit;
+    white-space: pre;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+  }
   &-editor > [data-scope='select'] {
-    min-width: 100px;
+    min-width: 0;
     max-width: 300px;
     font: inherit;
   }
-  &-editor [data-scope='select'][data-part='trigger'] {
+  &-editor [data-scope='select'][data-part='trigger'],
+  &-editor [data-scope='select'][data-part='trigger']:focus-visible,
+  &-editor [data-scope='select'][data-part='trigger'][data-state='open'] {
     height: 22px;
     background: transparent;
     outline: 0;
+    box-shadow: none;
   }
   &-image {
     width: 30px;

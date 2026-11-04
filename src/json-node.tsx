@@ -64,7 +64,7 @@ export function JsonNode({
   onEditIssue,
 }: NodeProps) {
   const open =
-    expansion.paths[JSON.stringify(path)] ?? (expansion.all || path.length < 2)
+    expansion.paths[JSON.stringify(path)] ?? (expansion.all || path.length === 0)
   const toggle = () => onToggle(path, !open)
   const row = useRef<HTMLDivElement>(null)
   const [actionError, setActionError] = useState('')
@@ -282,7 +282,14 @@ export function JsonNode({
               onChange={(key) => {
                 const field = schema.properties?.[key]
                 if (!field) return
-                onAdd([...path, key], initialValue(field))
+                const next = initialValue(field)
+                onAdd(
+                  [...path, key],
+                  typeof next === 'boolean' &&
+                    matchesType(resolveSchema(field, true), true)
+                    ? true
+                    : next,
+                )
               }}
             />
           )}
@@ -306,6 +313,7 @@ export function JsonNode({
             )}
           {!readOnly && variants && (
             <Select
+              autoWidth
               label={`${pathLabel(path)}数据形式`}
               value={String(variant)}
               options={variants.map((option, index) => ({
@@ -378,7 +386,10 @@ const cls = classes(css`
     border-radius: 4px;
   }
   &-line:hover,
-  &-line:focus-within {
+  &-line:has(
+      input:not([type='checkbox']):focus,
+      [data-scope='select'][data-state='open']
+    ) {
     background: #f6f7fb;
   }
   &-fold,
@@ -447,14 +458,33 @@ const cls = classes(css`
     opacity: 0;
   }
   &-actions > [data-scope='select'] {
-    width: 125px;
+    max-width: 240px;
     font: inherit;
+  }
+  &-actions [data-scope='select'][data-part='trigger'] {
+    height: 24px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 4px;
+    outline: 0;
+    box-shadow: none;
+  }
+  &-actions
+    [data-scope='select'][data-part='trigger']:is(
+      :hover,
+      :focus-visible,
+      [data-state='open']
+    ) {
+    border-color: #dce1ea;
+    background: #fff;
+    outline: 0;
+    box-shadow: none;
   }
   &-actions > &-add-field {
     width: 24px;
   }
   &-line:hover &-actions,
-  &-line:focus-within &-actions,
+  &-line:has(:focus-visible, input:not([type='checkbox']):focus) > &-actions,
   &-actions:has([data-state='open']) {
     opacity: 1;
   }
