@@ -263,29 +263,6 @@ export function JsonNode({
             onPickImage={onPickImage ? () => onPickImage(path, schema) : undefined}
           />
         )}
-        {showAnnotations && schema.title && (
-          <span className={cls('annotation')} title={schema.description}>
-            {schema.title}
-          </span>
-        )}
-        {readOnly && (
-          <span className={cls('badge')}>{input ? '只读' : '扩展字段'}</span>
-        )}
-        {(problem.length > 0 || actionError) && (
-          <span
-            className={cls('error')}
-            role='alert'
-            title={[...problem.map((issue) => issue.message), actionError]
-              .filter(Boolean)
-              .join('；')}>
-            <CircleAlert size={12} aria-hidden='true' />
-            <span className={cls('error-text')}>
-              {[...problem.map((issue) => issue.message), actionError]
-                .filter(Boolean)
-                .join('；')}
-            </span>
-          </span>
-        )}
         <div className={cls('actions')}>
           {!readOnly && object && missing.length > 0 && (
             <Select
@@ -386,6 +363,29 @@ export function JsonNode({
             />
           )}
         </div>
+        {showAnnotations && schema.title && (
+          <span className={cls('annotation')} title={schema.description}>
+            {schema.title}
+          </span>
+        )}
+        {readOnly && (
+          <span className={cls('badge')}>{input ? '只读' : '扩展字段'}</span>
+        )}
+        {(problem.length > 0 || actionError) && (
+          <span
+            className={cls('error')}
+            role='alert'
+            title={[...problem.map((issue) => issue.message), actionError]
+              .filter(Boolean)
+              .join('；')}>
+            <CircleAlert size={12} aria-hidden='true' />
+            <span className={cls('error-text')}>
+              {[...problem.map((issue) => issue.message), actionError]
+                .filter(Boolean)
+                .join('；')}
+            </span>
+          </span>
+        )}
       </div>
       {open && foldable && (
         <>
@@ -485,7 +485,6 @@ const cls = classes(css`
     line-height: max(26px, 1.8em);
   }
   &-actions {
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 2px;
