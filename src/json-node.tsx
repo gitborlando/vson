@@ -101,7 +101,21 @@ export function JsonNode({
   const missing = Object.entries(schema.properties ?? {}).filter(
     ([key, field]) => object && !Object.hasOwn(value, key) && !field.readOnly,
   )
-  const single = object && entries.length === 1
+  const onlyEntry = object && entries.length === 1 ? entries[0] : undefined
+  const onlyInput = onlyEntry ? propertySchema(schema, onlyEntry[0]) : undefined
+  const onlySchema = onlyEntry
+    ? resolveSchema(onlyInput ?? {}, onlyEntry[1])
+    : undefined
+  const single = Boolean(
+    onlyEntry &&
+    !isObject(onlyEntry[1]) &&
+    !Array.isArray(onlyEntry[1]) &&
+    typeof onlyEntry[1] !== 'boolean' &&
+    !input?.anyOf?.length &&
+    !onlyInput?.anyOf?.length &&
+    !onlySchema?.enum?.length &&
+    onlySchema?.format !== 'image',
+  )
   const foldable = container && entries.length > 0 && !single
   const problem = issues.filter((issue) => sameJson(issue.path, path))
   const variants = input?.anyOf

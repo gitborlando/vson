@@ -146,6 +146,7 @@ export function ScalarValue({
                   aria-describedby={error ? errorId : undefined}
                   inputMode={typeof value === 'number' ? 'decimal' : undefined}
                   value={draft}
+                  onFocus={(event) => event.currentTarget.select()}
                   onChange={(event) => {
                     setDraft(event.target.value)
                     setError('')
@@ -267,8 +268,9 @@ const cls = classes(css`
     box-shadow: none;
     transition: border-color 0.15s;
   }
-  &-editor:focus-within {
-    border-color: #a4afc1;
+  &-editor:focus-within,
+  &-editor:has([data-scope='select'][data-state='open']) {
+    border-color: var(--color);
     background: #fff;
   }
   &-editor[data-invalid] {
