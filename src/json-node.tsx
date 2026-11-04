@@ -510,7 +510,7 @@ const cls = classes(css`
       [data-state='open']
     ) {
     border-color: #dce1ea;
-    background: #fff;
+    background: var(--gray-bg);
     outline: 0;
     box-shadow: none;
   }
