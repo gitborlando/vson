@@ -2,6 +2,9 @@ export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
 export type JsonPath = (string | number)[]
 
+/** 结构视图的展开状态，不写入配置 JSON。 */
+export type VsonExpansion = { all: boolean; paths: Record<string, boolean> }
+
 /** VSON 支持的 JSON Schema 子集；format=image 和 mediaKind 为显示增强。 */
 export type VsonSchema = {
   type?: 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | 'null'

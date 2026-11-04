@@ -13,9 +13,14 @@ import {
   sameJson,
 } from './schema'
 import { ScalarValue } from './scalar-value'
-import type { JsonPath, JsonValue, VsonIssue, VsonSchema } from './types'
+import type {
+  JsonPath,
+  JsonValue,
+  VsonExpansion,
+  VsonIssue,
+  VsonSchema,
+} from './types'
 
-export type TreeExpansion = { all: boolean; paths: Record<string, boolean> }
 export type FocusRequest = { id: number; path: JsonPath }
 
 type NodeProps = {
@@ -25,7 +30,7 @@ type NodeProps = {
   label?: string | number
   readOnly?: boolean
   showAnnotations: boolean
-  expansion: TreeExpansion
+  expansion: VsonExpansion
   onToggle: (path: JsonPath, open: boolean) => void
   focusRequest?: FocusRequest
   onFocusHandled: () => void

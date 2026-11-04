@@ -11,7 +11,7 @@ import {
 import { Button, Segments, classes } from '@workbench/ui'
 import { CodeView } from './code-view'
 import { editJson, inspectJson } from './document'
-import { JsonNode, type FocusRequest, type TreeExpansion } from './json-node'
+import { JsonNode, type FocusRequest } from './json-node'
 import { MediaPicker } from './media-picker'
 import {
   isObject,
@@ -26,6 +26,7 @@ import { useAppearance } from './use-appearance'
 import type {
   JsonPath,
   JsonValue,
+  VsonExpansion,
   VsonInspection,
   VsonMediaAdapter,
   VsonSchema,
@@ -41,16 +42,20 @@ export function VsonEditor({
   onModeChange,
   onInteractionChange,
   history,
+  expansion: suppliedExpansion,
+  onExpansionChange,
 }: {
   value: string
   schema: VsonSchema
-  onChange: (text: string) => void
+  onChange: (text: string, expansion: VsonExpansion) => void
   inspect?: (text: string) => VsonInspection
   media?: VsonMediaAdapter
   mode: 'structure' | 'code'
   onModeChange: (mode: 'structure' | 'code') => void
   onInteractionChange?: (state: { busy: boolean; error: string }) => void
   history?: { undo: () => void; redo: () => void }
+  expansion?: VsonExpansion
+  onExpansionChange?: (expansion: VsonExpansion) => void
 }) {
   const inspect = suppliedInspect ?? ((text: string) => inspectJson(text, schema))
   const [structureDraft, setStructureDraft] = useState<{
@@ -60,10 +65,16 @@ export function VsonEditor({
   const text = structureDraft?.text ?? value
   const inspection = useMemo(() => inspect(text), [text, inspect])
   const [treeVersion, setTreeVersion] = useState(0)
-  const [expansion, setExpansion] = useState<TreeExpansion>({
+  const [localExpansion, setLocalExpansion] = useState<VsonExpansion>({
     all: false,
     paths: {},
   })
+  const expansion = suppliedExpansion ?? localExpansion
+  const setExpansion = (next: VsonExpansion) => {
+    if (sameJson(expansion, next)) return
+    setLocalExpansion(next)
+    onExpansionChange?.(next)
+  }
   const [focusRequest, setFocusRequest] = useState<FocusRequest>()
   const focusId = useRef(0)
   const [appearance, setAppearance] = useAppearance()
@@ -95,7 +106,11 @@ export function VsonEditor({
       .join('；')
     if (error !== interactionRef.current.error) interact({ error })
   }
-  const writeStructure = (next: string, result: VsonInspection) => {
+  const writeStructure = (
+    next: string,
+    result: VsonInspection,
+    nextExpansion = expansion,
+  ) => {
     if (structureDraft && structureDraft.source !== value) {
       draftError.current = '原 JSON 已变化，请先放弃本轮结构修改再重试'
       reportErrors()
@@ -107,7 +122,7 @@ export function VsonEditor({
     } else {
       setStructureDraft(undefined)
       draftError.current = ''
-      latest.current.onChange(next)
+      latest.current.onChange(next, nextExpansion)
     }
     reportErrors()
   }
@@ -153,7 +168,6 @@ export function VsonEditor({
     if (structureDraft && structureDraft.source !== value) return
     const next = editJson(latest.current.value, path, nextValue)
     const result = inspect(next)
-    writeStructure(next, result)
     const findEditable = (path: JsonPath): JsonPath | undefined => {
       const field = resolveSchema(
         schemaAt(schema, result.value, path) ?? {},
@@ -176,18 +190,18 @@ export function VsonEditor({
       return path
     }
     const focusPath = findEditable(target) ?? target
-    setExpansion((current) => {
-      const paths = { ...current.paths }
-      for (let length = 0; length <= focusPath.length; length++) {
-        paths[JSON.stringify(focusPath.slice(0, length))] = true
-      }
-      return { ...current, paths }
-    })
+    const paths = { ...expansion.paths }
+    for (let length = 0; length <= focusPath.length; length++) {
+      paths[JSON.stringify(focusPath.slice(0, length))] = true
+    }
+    const nextExpansion = { ...expansion, paths }
+    writeStructure(next, result, nextExpansion)
+    setExpansion(nextExpansion)
     setFocusRequest({ id: ++focusId.current, path: focusPath })
   }
   const format = () => {
     if (!inspection.syntaxValid || inspection.value === undefined) return
-    onChange(JSON.stringify(inspection.value, null, 2))
+    onChange(JSON.stringify(inspection.value, null, 2), expansion)
   }
   return (
     <div
@@ -260,9 +274,7 @@ export function VsonEditor({
               title={expansion.all ? '收起到第二级' : '全部展开'}
               aria-label={expansion.all ? '收起到第二级' : '全部展开'}
               disabled={interaction.busy}
-              onClick={() =>
-                setExpansion((current) => ({ all: !current.all, paths: {} }))
-              }
+              onClick={() => setExpansion({ all: !expansion.all, paths: {} })}
             />
           )}
           <Button
@@ -299,7 +311,7 @@ export function VsonEditor({
         {mode === 'code' ? (
           <CodeView
             value={value}
-            onChange={onChange}
+            onChange={(next) => onChange(next, expansion)}
             schema={schema}
             inspect={inspect}
           />
@@ -316,10 +328,10 @@ export function VsonEditor({
               focusRequest={focusRequest}
               onFocusHandled={() => setFocusRequest(undefined)}
               onToggle={(path, open) =>
-                setExpansion((current) => ({
-                  ...current,
-                  paths: { ...current.paths, [JSON.stringify(path)]: open },
-                }))
+                setExpansion({
+                  ...expansion,
+                  paths: { ...expansion.paths, [JSON.stringify(path)]: open },
+                })
               }
               onEditIssue={(path, error) => {
                 const key = JSON.stringify(path)

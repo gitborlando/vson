@@ -51,6 +51,7 @@ function Example() {
 - `media` 注入异步 `list(signal)` 和 `upload(file, kind)`。组件只消费通用 `{id,name,url}` 数据；不内置任何业务 URL 或 OSS 路径。`unavailableReason` 可解释暂不可用原因。
 - `onInteractionChange` 报告上传状态、尚未提交/不合法的字段输入及待补全结构；调用方应在忙碌或有输入问题时阻止应用。上传立即由适配器执行；将链接写入业务配置的时机由调用方决定。
 - 可选 `history` 接管局部编辑的撤销重做快捷键；不提供时，代码视图使用 CodeMirror 自带历史。
+- 可用 `expansion` / `onExpansionChange` 控制结构展开状态；不传时由组件内部管理。`onChange(text, expansion)` 同时给出此次改值后的展开状态，包括新增时自动展开的祖先。调用方可在值历史中保存修改前后视图，撤销/重做一起恢复；纯展开/收起通过 `onExpansionChange` 通知，不触发 `onChange`，无需新增历史步骤。
 - 应用、草稿保存、切换提示、冲突处理和浏览器离开保护均由应用层负责。
 
 本次仅代码审查、格式化及 diff check；未运行测试、构建、类型检查或浏览器验证。
