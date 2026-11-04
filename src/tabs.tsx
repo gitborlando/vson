@@ -46,8 +46,9 @@ const cls = classes(css`
   }
   &-list {
     display: flex;
-    gap: 16px;
-    padding: 0 17px;
+    gap: 14px;
+    padding: 0 10px;
+    flex-shrink: 0;
     border-bottom: 1px solid var(--border);
   }
   &-trigger {
@@ -55,7 +56,8 @@ const cls = classes(css`
     border-bottom: 2px solid transparent;
     color: var(--muted);
     background: none;
-    padding: 13px 0 10px;
+    padding: 8px 0 6px;
+    font-size: 12px;
   }
   &-trigger[data-selected] {
     border-bottom-color: var(--color);
@@ -64,6 +66,8 @@ const cls = classes(css`
   &-content {
     overflow: auto;
     flex: 1;
+    min-height: 0;
+    overscroll-behavior: contain;
     outline: none;
   }
 `)

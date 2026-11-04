@@ -23,7 +23,9 @@ export function PanelHeader({
 }
 const cls = classes(css`
   & {
-    padding: 15px 17px;
+    min-height: 36px;
+    padding: 7px 10px;
+    flex-shrink: 0;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
@@ -33,7 +35,9 @@ const cls = classes(css`
   &-title {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
   }
   &-aside {
     color: var(--muted);
