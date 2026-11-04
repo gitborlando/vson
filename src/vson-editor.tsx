@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { css } from '@emotion/css'
 import {
   Braces,
@@ -44,6 +44,7 @@ export function VsonEditor({
   history,
   expansion: suppliedExpansion,
   onExpansionChange,
+  toolbarActions,
 }: {
   value: string
   schema: VsonSchema
@@ -56,6 +57,7 @@ export function VsonEditor({
   history?: { undo: () => void; redo: () => void }
   expansion?: VsonExpansion
   onExpansionChange?: (expansion: VsonExpansion) => void
+  toolbarActions?: ReactNode
 }) {
   const inspect = suppliedInspect ?? ((text: string) => inspectJson(text, schema))
   const [structureDraft, setStructureDraft] = useState<{
@@ -254,6 +256,12 @@ export function VsonEditor({
           ]}
         />
         <div className={cls('tools')}>
+          {toolbarActions && (
+            <>
+              {toolbarActions}
+              <span className={cls('divider')} aria-hidden='true' />
+            </>
+          )}
           {mode === 'structure' && (
             <Button
               size={24}
@@ -450,9 +458,17 @@ const cls = classes(css`
   }
   &-tools {
     display: flex;
+    align-items: center;
     gap: 2px;
     margin-left: auto;
     color: #8e97a6;
+  }
+  &-divider {
+    width: 1px;
+    height: 16px;
+    margin-inline: 4px;
+    background: var(--border);
+    flex-shrink: 0;
   }
   &-draft {
     display: flex;
