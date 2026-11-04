@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react'
+import { useRef, type ReactNode, type ComponentProps } from 'react'
 import { ark } from '@ark-ui/react/factory'
 import { Button } from './button'
 export function FileButton({
@@ -6,16 +6,18 @@ export function FileButton({
   accept,
   onFile,
   disabled,
+  size,
 }: {
   children: ReactNode
   accept?: string
   onFile: (file: File) => void
   disabled?: boolean
+  size?: ComponentProps<typeof Button>['size']
 }) {
   const ref = useRef<HTMLInputElement>(null)
   return (
     <>
-      <Button disabled={disabled} onClick={() => ref.current?.click()}>
+      <Button size={size} disabled={disabled} onClick={() => ref.current?.click()}>
         {children}
       </Button>
       <ark.input

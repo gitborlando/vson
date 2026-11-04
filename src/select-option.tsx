@@ -142,6 +142,12 @@ const cls = classes(css`
       }
     }
 
+    &-trigger [data-part='value-text'] {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     &-positioner {
       z-index: 1000;
     }
