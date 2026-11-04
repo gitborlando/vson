@@ -10,8 +10,30 @@ export const installTheme = () => injectGlobal`
     --border-radius: 6px; --border-radius-sm: 3px;
     --shadow: 0 0 0 1px #0000000d, 0 4px 10px #0000001a;
     --border: #e7e8ec; --muted: #858a94; --radius: 6px;
+    --scrollbar-thumb: #c5cad3; --scrollbar-thumb-hover: #9ca5b3;
   }
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  @supports selector(::-webkit-scrollbar) {
+    * { scrollbar-width: auto; scrollbar-color: auto; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      border: 2px solid transparent;
+      border-radius: 999px;
+      background: var(--scrollbar-thumb);
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
+    ::-webkit-scrollbar-button { display: none; }
+  }
+  @media (forced-colors: active) {
+    * { scrollbar-width: auto; scrollbar-color: auto; }
+    ::-webkit-scrollbar-thumb { background: ButtonText; }
+  }
   body { margin: 0; }
   button, input, textarea { font: inherit; }
   button { cursor: pointer; }

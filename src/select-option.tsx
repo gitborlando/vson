@@ -1,7 +1,14 @@
 import { Portal, Select as ArkSelect, createListCollection } from '@ark-ui/react'
-import { forwardRef, useMemo, type ComponentPropsWithRef } from 'react'
+import {
+  forwardRef,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentPropsWithRef,
+  type ReactElement,
+} from 'react'
 import { css, cx } from '@emotion/css'
-import { classes } from './style-utils'
+import { classes, withCssVars } from './style-utils'
 import { styles } from './styles'
 import { Check, ChevronDown } from 'lucide-react'
 import { OptionBalanceItem } from './option-balance-item'
@@ -19,6 +26,7 @@ export interface SelectOptionProps extends Omit<
   defaultValue?: string
   placeholder?: string
   disabled?: boolean
+  trigger?: ReactElement
   onChange?: (value: string) => void
 }
 
@@ -32,11 +40,14 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
       placeholder,
       label,
       disabled,
+      trigger,
       onChange,
       ...rest
     },
     ref,
   ) => {
+    const root = useRef<HTMLDivElement | null>(null)
+    const [typography, setTypography] = useState<Record<string, string>>({})
     const collection = useMemo(
       () => createListCollection({ items: options }),
       [options],
@@ -45,7 +56,11 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
 
     return (
       <ArkSelect.Root
-        ref={ref}
+        ref={(element) => {
+          root.current = element
+          if (typeof ref === 'function') return ref(element)
+          if (ref) ref.current = element
+        }}
         collection={collection}
         value={value === undefined ? undefined : [value]}
         defaultValue={defaultValue === undefined ? undefined : [defaultValue]}
@@ -53,27 +68,45 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
         positioning={{
           placement: 'bottom-start',
           strategy: 'fixed',
-          gutter: menuOffset,
-          sameWidth: true,
+          gutter: trigger ? 4 : menuOffset,
+          sameWidth: !trigger,
           fitViewport: true,
-          flip: false,
+          flip: Boolean(trigger),
           slide: true,
           overflowPadding: 8,
         }}
         onValueChange={({ value }) => value[0] && onChange?.(value[0])}
+        onOpenChange={({ open }) => {
+          if (!open || !root.current) return
+          const computed = getComputedStyle(root.current)
+          setTypography({
+            '--select-font-family': computed.fontFamily,
+            '--select-font-size': computed.fontSize,
+            '--select-line-height': computed.lineHeight,
+          })
+        }}
         className={cx(cls(), className)}
         {...rest}>
         <ArkSelect.Control>
-          <ArkSelect.Trigger aria-label={label} className={cls('trigger')}>
-            <ArkSelect.ValueText placeholder={placeholder} />
-            <ArkSelect.Indicator className={cls('indicator')}>
-              <Lucide icon={ChevronDown} size={14} />
-            </ArkSelect.Indicator>
-          </ArkSelect.Trigger>
+          {trigger ? (
+            <ArkSelect.Trigger aria-label={label} asChild>
+              {trigger}
+            </ArkSelect.Trigger>
+          ) : (
+            <ArkSelect.Trigger aria-label={label} className={cls('trigger')}>
+              <ArkSelect.ValueText placeholder={placeholder} />
+              <ArkSelect.Indicator className={cls('indicator')}>
+                <Lucide icon={ChevronDown} size={14} />
+              </ArkSelect.Indicator>
+            </ArkSelect.Trigger>
+          )}
         </ArkSelect.Control>
         <ArkSelect.HiddenSelect />
         <Portal>
-          <ArkSelect.Positioner className={cls('positioner')}>
+          <ArkSelect.Positioner
+            className={cls('positioner')}
+            data-custom-trigger={Boolean(trigger) || undefined}
+            style={withCssVars(undefined, typography)}>
             <ArkSelect.Content className={cls('content')}>
               {options.map((option) => (
                 <ArkSelect.Item item={option} key={option.value} asChild>
@@ -103,6 +136,7 @@ const cls = classes(css`
     & {
       width: 100%;
       min-width: 0;
+      font-size: 12px;
     }
 
     &-trigger {
@@ -110,13 +144,13 @@ const cls = classes(css`
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       width: 100%;
-      height: 30px;
+      height: max(30px, 1.8em);
       padding-inline: 8px 6px;
       border: 0;
       outline: 0;
       color: rgba(0, 0, 0, 0.78);
       background: var(--gray-bg);
-      font-size: 12px;
+      font: inherit;
       text-align: left;
       cursor: pointer;
       ${styles.borderRadius}
@@ -150,6 +184,15 @@ const cls = classes(css`
 
     &-positioner {
       z-index: 1000;
+      font-family: var(--select-font-family, inherit);
+      font-size: var(--select-font-size, 12px);
+      line-height: var(--select-line-height, normal);
+    }
+
+    &-positioner[data-custom-trigger] {
+      width: max-content;
+      min-width: 180px;
+      max-width: min(480px, calc(100vw - 16px));
     }
 
     &-content {
@@ -166,9 +209,11 @@ const cls = classes(css`
     }
 
     &-item {
-      height: 30px;
+      height: auto;
+      min-height: max(30px, 1.8em);
+      padding-block: 4px;
       outline: 0;
-      font-size: 12px;
+      font: inherit;
 
       &[data-highlighted] {
         color: white;
