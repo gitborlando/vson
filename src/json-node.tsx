@@ -13,6 +13,7 @@ import {
   sameJson,
 } from './schema'
 import { ScalarValue } from './scalar-value'
+import { creationOptions } from './creation'
 import type {
   JsonPath,
   JsonValue,
@@ -79,10 +80,12 @@ export function JsonNode({
     return message
   }
   const schema = resolveSchema(input ?? {}, value)
-  const readOnly = Boolean(inherited || !input || schema.readOnly)
   const array = Array.isArray(value)
   const object = isObject(value)
   const container = array || object
+  const readOnly = Boolean(
+    inherited || !input || schema.readOnly || (!container && schema.createOnly),
+  )
   const focused = focusRequest && sameJson(focusRequest.path, path)
   useEffect(() => {
     if (!focused || !container) return
@@ -98,6 +101,12 @@ export function JsonNode({
     return () => cancelAnimationFrame(frame)
   }, [focusRequest?.id, focused, container])
   const arrayItem = !Array.isArray(schema.items) ? schema.items : undefined
+  const itemOptions =
+    array && arrayItem ? creationOptions(arrayItem, value, schema) : []
+  const addItem = (index: number) => {
+    if (!array || !itemOptions[index]) return
+    onAdd(path, [...value, itemOptions[index].value], [...path, value.length])
+  }
   const entries: [string | number, JsonValue][] = array
     ? value.map((item, index) => [index, item])
     : object
@@ -105,6 +114,14 @@ export function JsonNode({
       : []
   const missing = Object.entries(schema.properties ?? {}).filter(
     ([key, field]) => object && !Object.hasOwn(value, key) && !field.readOnly,
+  )
+  const fieldOptions = missing.flatMap(([key, field]) =>
+    creationOptions(field).map((option, index, options) => ({
+      key,
+      value: JSON.stringify([key, index]),
+      label: `${key}${field.title ? ' · ' + field.title : ''}${options.length > 1 ? ' · ' + option.label : ''}`,
+      initial: option.value,
+    })),
   )
   const onlyEntry = object && entries.length === 1 ? entries[0] : undefined
   const single = Boolean(
@@ -283,43 +300,53 @@ export function JsonNode({
                   aria-label={`${pathLabel(path)}添加字段`}
                 />
               }
-              options={missing.map(([key, field]) => ({
-                value: key,
-                label: `${key}${field.title ? ' · ' + field.title : ''}`,
-              }))}
-              onChange={(key) => {
-                const field = schema.properties?.[key]
-                if (!field) return
-                const next = initialValue(field)
-                onAdd(
-                  [...path, key],
-                  field.omitFalse &&
-                    typeof next === 'boolean' &&
-                    matchesType(resolveSchema(field, true), true)
-                    ? true
-                    : next,
+              options={fieldOptions}
+              onChange={(selected) => {
+                const option = fieldOptions.find(
+                  (option) => option.value === selected,
                 )
+                if (option) onAdd([...path, option.key], option.initial)
               }}
             />
           )}
           {!readOnly &&
             array &&
             arrayItem &&
-            entries.length < (schema.maxItems ?? Infinity) && (
+            entries.length < (schema.maxItems ?? Infinity) &&
+            (itemOptions.length > 1 &&
+            (arrayItem.creationOptions?.length || isObject(itemOptions[0].value)) ? (
+              <Select
+                className={cls('add-field')}
+                label={`${pathLabel(path)}添加项目`}
+                value=''
+                trigger={
+                  <Button
+                    icon={<Plus size={12} />}
+                    title={`添加项目，推荐${itemOptions[0].label}`}
+                    data-add-item
+                    aria-label={`${pathLabel(path)}添加项目`}
+                  />
+                }
+                options={itemOptions.map((option, index) => ({
+                  value: String(index),
+                  label: `${option.label}${index === 0 ? ' · 推荐' : ''}`,
+                }))}
+                onChange={(index) => addItem(Number(index))}
+              />
+            ) : (
               <Button
                 icon={<Plus size={12} />}
-                title='添加项目'
+                title={
+                  itemOptions.length
+                    ? `添加项目：${itemOptions[0].label}`
+                    : '可用选项已添加完'
+                }
+                disabled={!itemOptions.length}
                 data-add-item
                 aria-label={`${pathLabel(path)}添加项目`}
-                onClick={() =>
-                  onAdd(
-                    path,
-                    [...value, initialValue(arrayItem)],
-                    [...path, entries.length],
-                  )
-                }
+                onClick={() => addItem(0)}
               />
-            )}
+            ))}
           {!readOnly && variants && (
             <Select
               autoWidth

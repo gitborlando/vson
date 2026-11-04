@@ -18,11 +18,18 @@ export type VsonSchema = {
   enumLabels?: string[]
   const?: JsonPrimitive
   default?: JsonValue
+  /** 新增时提供的完整初值；第一项为推荐值。 */
+  creationOptions?: { label: string; value: JsonValue }[]
+  /** 结构视图中只能在新增时确定，创建后不直接编辑。 */
+  createOnly?: boolean
   readOnly?: boolean
   /** 字段级结构编辑规则：可选对象字段设为 false 时删除键；默认保留 false。 */
   omitFalse?: boolean
   minItems?: number
   maxItems?: number
+  uniqueItems?: boolean
+  /** 数组对象按此直接子字段判重。 */
+  uniqueBy?: string
   minimum?: number
   exclusiveMinimum?: number
   maximum?: number

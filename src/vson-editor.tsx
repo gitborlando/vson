@@ -173,7 +173,12 @@ export function VsonEditor({
         schemaAt(schema, result.value, path) ?? {},
         valueAt(result.value, path),
       )
-      if (field.readOnly || field.const !== undefined || field.enum?.length === 1)
+      if (
+        field.readOnly ||
+        field.createOnly ||
+        field.const !== undefined ||
+        field.enum?.length === 1
+      )
         return
       const current = valueAt(result.value, path)
       if (current === undefined) return

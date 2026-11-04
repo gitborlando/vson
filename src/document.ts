@@ -148,6 +148,22 @@ export function inspectJson(
       if (field.maxItems !== undefined && current.length > field.maxItems)
         add(path, `最多 ${field.maxItems} 项`)
       current.forEach((item, index) => {
+        const identity = field.uniqueBy ? valueAt(item, [field.uniqueBy]) : item
+        if (
+          (field.uniqueItems || field.uniqueBy) &&
+          current
+            .slice(0, index)
+            .some((previous) =>
+              sameJson(
+                field.uniqueBy ? valueAt(previous, [field.uniqueBy]) : previous,
+                identity,
+              ),
+            )
+        )
+          add(
+            [...path, index],
+            field.uniqueBy ? `${field.uniqueBy} 不能重复` : '项目不能重复',
+          )
         const child = itemSchema(field, index)
         if (child) visit(child, item, [...path, index])
       })

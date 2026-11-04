@@ -92,6 +92,8 @@ export const schemaAt = (
 export const initialValue = (input: VsonSchema): JsonValue => {
   const schema = resolveSchema(input)
   if (schema.default !== undefined) return structuredClone(schema.default)
+  if (schema.creationOptions?.length)
+    return structuredClone(schema.creationOptions[0].value)
   if (schema.const !== undefined) return schema.const
   if (schema.enum?.length) return schema.enum[0]
   if (schema.type === 'object')
