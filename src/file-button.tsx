@@ -7,17 +7,22 @@ export function FileButton({
   onFile,
   disabled,
   size,
+  ...buttonProps
 }: {
   children: ReactNode
   accept?: string
   onFile: (file: File) => void
   disabled?: boolean
   size?: ComponentProps<typeof Button>['size']
-}) {
+} & Omit<ComponentProps<typeof Button>, 'onClick' | 'ref'>) {
   const ref = useRef<HTMLInputElement>(null)
   return (
     <>
-      <Button size={size} disabled={disabled} onClick={() => ref.current?.click()}>
+      <Button
+        {...buttonProps}
+        size={size}
+        disabled={disabled}
+        onClick={() => ref.current?.click()}>
         {children}
       </Button>
       <ark.input
