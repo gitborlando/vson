@@ -1,5 +1,5 @@
 import { Popover as ArkPopover, Portal } from '@ark-ui/react'
-import { css } from '@emotion/css'
+import { css, cx } from '@emotion/css'
 import type { ReactElement, ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { Button } from './button'
@@ -10,11 +10,15 @@ export function Popover({
   trigger,
   children,
   onOpenChange,
+  showHeader = true,
+  className,
 }: {
   title: string
   trigger: ReactElement
   children: ReactNode
   onOpenChange?: (open: boolean) => void
+  showHeader?: boolean
+  className?: string
 }) {
   return (
     <ArkPopover.Root
@@ -33,13 +37,19 @@ export function Popover({
       <ArkPopover.Trigger asChild>{trigger}</ArkPopover.Trigger>
       <Portal>
         <ArkPopover.Positioner className={cls('positioner')}>
-          <ArkPopover.Content className={cls()}>
-            <div className={cls('header')}>
-              <ArkPopover.Title>{title}</ArkPopover.Title>
-              <ArkPopover.CloseTrigger asChild>
-                <Button title='关闭' aria-label='关闭' icon={<X size={14} />} />
-              </ArkPopover.CloseTrigger>
-            </div>
+          <ArkPopover.Content className={cx(cls(), className)}>
+            {showHeader ? (
+              <div className={cls('header')}>
+                <ArkPopover.Title>{title}</ArkPopover.Title>
+                <ArkPopover.CloseTrigger asChild>
+                  <Button title='关闭' aria-label='关闭' icon={<X size={14} />} />
+                </ArkPopover.CloseTrigger>
+              </div>
+            ) : (
+              <ArkPopover.Title className={cls('hidden-title')}>
+                {title}
+              </ArkPopover.Title>
+            )}
             <div className={cls('body')}>{children}</div>
           </ArkPopover.Content>
         </ArkPopover.Positioner>
@@ -78,5 +88,15 @@ const cls = classes(css`
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
+  }
+  &-hidden-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 `)
