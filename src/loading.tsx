@@ -1,50 +1,84 @@
-import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
+import { useEffect, useState } from 'react'
+import { ark } from '@ark-ui/react/factory'
 import { css, cx } from '@emotion/css'
-import { classes } from './style-utils'
+import { classes, withCssVars } from './style-utils'
 
-/** masked 模式覆盖最近的定位容器，不使用全屏 Portal。 */
+/** 始终覆盖最近的定位容器；立即拦截点击，延迟显示动画和背景。 */
 export function Loading({
-  variant = 'spinner',
+  boxed = false,
+  maskColor = 'transparent',
+  delay = 150,
   label = '加载中',
   className,
 }: {
-  variant?: 'spinner' | 'masked'
+  boxed?: boolean
+  maskColor?: string
+  /** 动画和背景的显示延迟，单位 ms；设为 0 可立即显示。 */
+  delay?: number
   label?: string
   className?: string
 }) {
-  const spinner = (
-    <span className={cls('spinner')} role='status' aria-label={label} />
-  )
-  if (variant === 'spinner')
-    return <span className={cx(cls(), className)}>{spinner}</span>
+  const [visible, setVisible] = useState(delay <= 0)
+  useEffect(() => {
+    setVisible(delay <= 0)
+    if (delay <= 0) return
+    const timer = setTimeout(() => setVisible(true), delay)
+    return () => clearTimeout(timer)
+  }, [delay])
 
   return (
-    <ArkDialog.Root
-      open
-      modal={false}
-      trapFocus
-      preventScroll={false}
-      closeOnEscape={false}
-      closeOnInteractOutside={false}>
-      <ArkDialog.Backdrop className={cls('mask')} />
-      <ArkDialog.Positioner className={cls('positioner')}>
-        <ArkDialog.Content className={cx(cls('box'), className)}>
-          <ArkDialog.Title className={cls('title')}>{label}</ArkDialog.Title>
-          {spinner}
-        </ArkDialog.Content>
-      </ArkDialog.Positioner>
-    </ArkDialog.Root>
+    <ark.span
+      className={cx(cls(), className)}
+      style={withCssVars(undefined, { '--loading-mask-color': maskColor })}
+      data-visible={visible}
+      role='status'
+      aria-label={label}
+      onPointerDown={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+      }}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+      }}>
+      <span className={cls('indicator')} data-boxed={boxed} aria-hidden='true'>
+        <span className={cls('spinner')} />
+      </span>
+    </ark.span>
   )
 }
 
 const cls = classes(css`
   & {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    position: absolute;
+    inset: 0;
+    z-index: 32;
+    display: grid;
+    place-items: center;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: auto;
+    touch-action: none;
+    cursor: wait;
     color: var(--color);
-    vertical-align: middle;
+  }
+  &[data-visible='true'] {
+    background: var(--loading-mask-color);
+  }
+  &-indicator {
+    display: grid;
+    place-items: center;
+    visibility: hidden;
+  }
+  &[data-visible='true'] &-indicator {
+    visibility: visible;
+  }
+  &-indicator[data-boxed='true'] {
+    width: 76px;
+    height: 64px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: var(--shadow);
   }
   &-spinner {
     display: block;
@@ -55,39 +89,6 @@ const cls = classes(css`
     border-right-color: transparent;
     border-radius: 50%;
     animation: workbench-loading-spin 0.7s linear infinite;
-  }
-  &-mask {
-    position: absolute;
-    inset: 0;
-    z-index: 32;
-    background: #17203235;
-  }
-  &-positioner {
-    position: absolute;
-    inset: 0;
-    z-index: 33;
-    display: grid;
-    place-items: center;
-    cursor: wait;
-  }
-  &-box {
-    display: grid;
-    place-items: center;
-    width: 76px;
-    height: 64px;
-    border-radius: 12px;
-    background: #fff;
-    color: var(--color);
-    box-shadow: var(--shadow);
-    outline: none;
-  }
-  &-title {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
   @keyframes workbench-loading-spin {
     to {
