@@ -54,7 +54,7 @@ export const codeExtensions = (
       const field = schemaAt(schema, value, location.path)
       if (!field) return null
       const variants = field.anyOf ?? [field]
-      const candidates = variants.flatMap(
+      const candidates = variants.flatMap<JsonValue>(
         (item) =>
           item.enum ??
           (item.const !== undefined

@@ -41,6 +41,7 @@ export function VsonEditor({
   const [interaction, setInteraction] = useState({ busy: false, error: '' })
   const interactionRef = useRef(interaction)
   const fieldErrors = useRef(new Map<string, string>())
+  const mediaError = useRef('')
   const latest = useRef({ value, onChange })
   latest.current = { value, onChange }
   const interact = (patch: Partial<typeof interaction>) => {
@@ -48,6 +49,12 @@ export function VsonEditor({
     interactionRef.current = next
     setInteraction(next)
     onInteractionChange?.(next)
+  }
+  const reportErrors = () => {
+    const error = [...fieldErrors.current.values(), mediaError.current]
+      .filter(Boolean)
+      .join('；')
+    if (error !== interactionRef.current.error) interact({ error })
   }
   const format = () => {
     if (!inspection.syntaxValid || inspection.value === undefined) return
@@ -139,8 +146,7 @@ export function VsonEditor({
                 const key = JSON.stringify(path)
                 if (error) fieldErrors.current.set(key, error)
                 else fieldErrors.current.delete(key)
-                const next = [...fieldErrors.current.values()].join('；')
-                if (next !== interactionRef.current.error) interact({ error: next })
+                reportErrors()
               }}
               onChange={(path, value) =>
                 onChange(editJson(latest.current.value, path, value))
@@ -185,12 +191,14 @@ export function VsonEditor({
           kind={mediaTarget.schema.mediaKind}
           onClose={() => {
             setMediaTarget(undefined)
-            interact({ error: '' })
+            mediaError.current = ''
+            reportErrors()
           }}
           onBusyChange={(busy) => interact({ busy })}
           onSelect={(url) => {
             if (latest.current.value !== mediaTarget.source) {
-              interact({ error: '选择图片期间内容已变化，请关闭后重新选择' })
+              mediaError.current = '选择图片期间内容已变化，请关闭后重新选择'
+              reportErrors()
               return
             }
             latest.current.onChange(

@@ -24,7 +24,11 @@ export function MediaPicker({
   const [uploading, setUploading] = useState(false)
   const [refresh, setRefresh] = useState(0)
   useEffect(() => {
-    if (adapter.unavailableReason) return
+    if (adapter.unavailableReason) {
+      setItems([])
+      setLoading(false)
+      return
+    }
     const request = new AbortController()
     setLoading(true)
     setError('')
@@ -122,7 +126,7 @@ export function MediaPicker({
             <Button
               key={item.id}
               className={cls('item')}
-              disabled={uploading}
+              disabled={uploading || Boolean(adapter.unavailableReason)}
               onClick={() => onSelect(item.url)}
               title={item.name}>
               <OssImage src={item.url} alt={item.name} className={cls('image')} />
