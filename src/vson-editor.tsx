@@ -16,6 +16,8 @@ import { MediaPicker } from './media-picker'
 import {
   isObject,
   matchesType,
+  orderedKeys,
+  orderValue,
   pathLabel,
   resolveSchema,
   sameJson,
@@ -148,7 +150,7 @@ export function VsonEditor({
       matchesType(resolveSchema(field, false), false)
     const normalized = removeFalse ? undefined : nextValue
     if (sameJson(normalized, valueAt(inspection.value, path))) return ''
-    const next = editJson(latest.current.value, path, normalized)
+    const next = editJson(latest.current.value, path, normalized, schema)
     const result = inspect(next)
     const problems = result.issues.filter((issue) => {
       const related = path
@@ -168,7 +170,7 @@ export function VsonEditor({
   }
   const addStructure = (path: JsonPath, nextValue: JsonValue, target = path) => {
     if (structureDraft && structureDraft.source !== value) return
-    const next = editJson(latest.current.value, path, nextValue)
+    const next = editJson(latest.current.value, path, nextValue, schema)
     const result = inspect(next)
     const findEditable = (path: JsonPath): JsonPath | undefined => {
       const field = resolveSchema(
@@ -187,7 +189,7 @@ export function VsonEditor({
       const keys = Array.isArray(current)
         ? current.map((_, index) => index)
         : isObject(current)
-          ? Object.keys(current)
+          ? orderedKeys(field, current)
           : undefined
       if (!keys) return path
       for (const key of keys) {
@@ -208,7 +210,10 @@ export function VsonEditor({
   }
   const format = () => {
     if (!inspection.syntaxValid || inspection.value === undefined) return
-    onChange(JSON.stringify(inspection.value, null, 2), expansion)
+    onChange(
+      JSON.stringify(orderValue(schema, inspection.value), null, 2),
+      expansion,
+    )
   }
   return (
     <div

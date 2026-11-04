@@ -56,6 +56,29 @@ export const propertySchema = (schema: VsonSchema, key: string | number) =>
     ? schema.properties[key]
     : undefined
 
+export const orderedKeys = (input: VsonSchema, value: Record<string, JsonValue>) => {
+  const properties = resolveSchema(input, value).properties ?? {}
+  return [
+    ...Object.keys(properties).filter((key) => Object.hasOwn(value, key)),
+    ...Object.keys(value).filter((key) => !Object.hasOwn(properties, key)),
+  ]
+}
+
+export const orderValue = (input: VsonSchema, value: JsonValue): JsonValue => {
+  const schema = resolveSchema(input, value)
+  if (Array.isArray(value))
+    return value.map((item, index) =>
+      orderValue(itemSchema(schema, index) ?? {}, item),
+    )
+  if (!isObject(value)) return value
+  return Object.fromEntries(
+    orderedKeys(schema, value).map((key) => [
+      key,
+      orderValue(propertySchema(schema, key) ?? {}, value[key]),
+    ]),
+  )
+}
+
 export const valueAt = (
   value: JsonValue | undefined,
   path: JsonPath,

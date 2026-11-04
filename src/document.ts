@@ -12,8 +12,10 @@ import {
   isObject,
   itemSchema,
   matchesType,
+  orderValue,
   resolveSchema,
   sameJson,
+  schemaAt,
   valueAt,
 } from './schema'
 import type {
@@ -35,7 +37,35 @@ export const editJson = (
   text: string,
   path: JsonPath,
   value: JsonValue | undefined,
-) => applyEdits(text, modify(text, path, value, { formattingOptions }))
+  schema?: VsonSchema,
+) => {
+  if (!schema)
+    return applyEdits(text, modify(text, path, value, { formattingOptions }))
+  const current = JSON.parse(text) as JsonValue
+  const field = schemaAt(schema, current, path)
+  const next = field && value !== undefined ? orderValue(field, value) : value
+  const parentPath = path.slice(0, -1)
+  const parent = resolveSchema(
+    schemaAt(schema, current, parentPath) ?? {},
+    valueAt(current, parentPath),
+  )
+  const order = new Map(
+    Object.keys(parent.properties ?? {}).map((key, index) => [key, index]),
+  )
+  const rank = order.get(String(path.at(-1))) ?? Infinity
+  return applyEdits(
+    text,
+    modify(text, path, next, {
+      formattingOptions,
+      getInsertionIndex: (properties) => {
+        const index = properties.findIndex(
+          (key) => (order.get(key) ?? Infinity) > rank,
+        )
+        return index < 0 ? properties.length : index
+      },
+    }),
+  )
+}
 
 export const issueRange = (text: string, path: JsonPath) => {
   const tree = parseTree(text)

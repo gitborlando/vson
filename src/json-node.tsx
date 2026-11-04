@@ -7,6 +7,7 @@ import {
   isObject,
   itemSchema,
   matchesType,
+  orderedKeys,
   pathLabel,
   propertySchema,
   resolveSchema,
@@ -110,7 +111,7 @@ export function JsonNode({
   const entries: [string | number, JsonValue][] = array
     ? value.map((item, index) => [index, item])
     : object
-      ? Object.entries(value)
+      ? orderedKeys(schema, value).map((key) => [key, value[key]])
       : []
   const missing = Object.entries(schema.properties ?? {}).filter(
     ([key, field]) => object && !Object.hasOwn(value, key) && !field.readOnly,
