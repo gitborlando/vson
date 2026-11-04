@@ -2,6 +2,7 @@ import { Portal, Select as ArkSelect, createListCollection } from '@ark-ui/react
 import {
   forwardRef,
   useMemo,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithRef,
@@ -27,6 +28,8 @@ export interface SelectOptionProps extends Omit<
   placeholder?: string
   disabled?: boolean
   trigger?: ReactElement
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
   onChange?: (value: string) => void
 }
 
@@ -41,6 +44,8 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
       label,
       disabled,
       trigger,
+      defaultOpen,
+      onOpenChange,
       onChange,
       ...rest
     },
@@ -52,7 +57,18 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
       () => createListCollection({ items: options }),
       [options],
     )
-    const menuOffset = options.length < 3 ? -((options.length + 1) * 30) / 2 : -60
+    const readTypography = () => {
+      if (!root.current) return
+      const computed = getComputedStyle(root.current)
+      setTypography({
+        '--select-font-family': computed.fontFamily,
+        '--select-font-size': computed.fontSize,
+        '--select-line-height': computed.lineHeight,
+      })
+    }
+    useLayoutEffect(() => {
+      if (defaultOpen) readTypography()
+    }, [defaultOpen])
 
     return (
       <ArkSelect.Root
@@ -65,25 +81,21 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
         value={value === undefined ? undefined : [value]}
         defaultValue={defaultValue === undefined ? undefined : [defaultValue]}
         disabled={disabled}
+        defaultOpen={defaultOpen}
         positioning={{
           placement: 'bottom-start',
           strategy: 'fixed',
-          gutter: trigger ? 4 : menuOffset,
-          sameWidth: !trigger,
+          gutter: 4,
+          sameWidth: false,
           fitViewport: true,
-          flip: Boolean(trigger),
+          flip: true,
           slide: true,
           overflowPadding: 8,
         }}
         onValueChange={({ value }) => value[0] && onChange?.(value[0])}
         onOpenChange={({ open }) => {
-          if (!open || !root.current) return
-          const computed = getComputedStyle(root.current)
-          setTypography({
-            '--select-font-family': computed.fontFamily,
-            '--select-font-size': computed.fontSize,
-            '--select-line-height': computed.lineHeight,
-          })
+          if (open) readTypography()
+          onOpenChange?.(open)
         }}
         className={cx(cls(), className)}
         {...rest}>
@@ -184,15 +196,16 @@ const cls = classes(css`
 
     &-positioner {
       z-index: 1000;
+      width: max-content;
+      min-width: max(160px, var(--reference-width, 0px));
+      max-width: min(480px, calc(100vw - 16px));
       font-family: var(--select-font-family, inherit);
       font-size: var(--select-font-size, 12px);
       line-height: var(--select-line-height, normal);
     }
 
     &-positioner[data-custom-trigger] {
-      width: max-content;
       min-width: 180px;
-      max-width: min(480px, calc(100vw - 16px));
     }
 
     &-content {
@@ -214,6 +227,8 @@ const cls = classes(css`
       padding-block: 4px;
       outline: 0;
       font: inherit;
+      white-space: nowrap;
+      padding-inline: 8px 12px;
 
       &[data-highlighted] {
         color: white;
@@ -224,6 +239,19 @@ const cls = classes(css`
         opacity: 0.4;
         cursor: not-allowed;
       }
+    }
+
+    &-item > span:first-child {
+      min-width: 0;
+    }
+    &-item > span:first-child > span:last-child {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &-item > span:last-child:empty {
+      display: none;
     }
 
     &-item-indicator {
