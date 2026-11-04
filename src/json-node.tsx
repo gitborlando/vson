@@ -495,24 +495,22 @@ const cls = classes(css`
     max-width: 240px;
     font: inherit;
   }
-  &-actions [data-scope='select'][data-part='trigger'] {
-    height: 24px;
-    border: 1px solid transparent;
+  &-actions button {
+    border: 0;
     background: transparent;
     border-radius: 4px;
     outline: 0;
     box-shadow: none;
   }
-  &-actions
-    [data-scope='select'][data-part='trigger']:is(
-      :hover,
-      :focus-visible,
-      [data-state='open']
-    ) {
-    border-color: #dce1ea;
+  &-actions [data-scope='select'][data-part='trigger'] {
+    height: 24px;
+  }
+  &-actions button:is(:hover, :focus-visible, [data-state='open']) {
     background: var(--gray-bg);
-    outline: 0;
-    box-shadow: none;
+  }
+  &-actions button:focus-visible {
+    outline: 2px solid var(--color);
+    outline-offset: 2px;
   }
   &-actions > &-add-field {
     width: 24px;
