@@ -126,7 +126,7 @@ export function VsonEditor({
       typeof key === 'string' &&
       isObject(valueAt(inspection.value, parentPath)) &&
       !parent.required?.includes(key) &&
-      field &&
+      field?.omitFalse === true &&
       !field.readOnly &&
       matchesType(resolveSchema(field, false), false)
     const normalized = removeFalse ? undefined : nextValue

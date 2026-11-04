@@ -102,19 +102,8 @@ export function JsonNode({
     ([key, field]) => object && !Object.hasOwn(value, key) && !field.readOnly,
   )
   const onlyEntry = object && entries.length === 1 ? entries[0] : undefined
-  const onlyInput = onlyEntry ? propertySchema(schema, onlyEntry[0]) : undefined
-  const onlySchema = onlyEntry
-    ? resolveSchema(onlyInput ?? {}, onlyEntry[1])
-    : undefined
   const single = Boolean(
-    onlyEntry &&
-    !isObject(onlyEntry[1]) &&
-    !Array.isArray(onlyEntry[1]) &&
-    typeof onlyEntry[1] !== 'boolean' &&
-    !input?.anyOf?.length &&
-    !onlyInput?.anyOf?.length &&
-    !onlySchema?.enum?.length &&
-    onlySchema?.format !== 'image',
+    onlyEntry && !isObject(onlyEntry[1]) && !Array.isArray(onlyEntry[1]),
   )
   const foldable = container && entries.length > 0 && !single
   const problem = issues.filter((issue) => sameJson(issue.path, path))
@@ -299,7 +288,8 @@ export function JsonNode({
                 const next = initialValue(field)
                 onAdd(
                   [...path, key],
-                  typeof next === 'boolean' &&
+                  field.omitFalse &&
+                    typeof next === 'boolean' &&
                     matchesType(resolveSchema(field, true), true)
                     ? true
                     : next,
@@ -454,13 +444,12 @@ const cls = classes(css`
     white-space: nowrap;
   }
   &-children {
-    margin-left: 14px;
-    padding-left: 5px;
-    border-left: 1px solid #edf0f5;
+    padding-left: 2ch;
+    background: linear-gradient(#edf0f5, #edf0f5) 9px 0 / 1px 100% no-repeat;
   }
   &-closing {
     color: #8b94a3;
-    padding-left: 21px;
+    padding-left: 25px;
     line-height: max(26px, 1.8em);
   }
   &-actions {

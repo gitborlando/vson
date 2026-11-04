@@ -16,6 +16,8 @@ export type VsonSchema = {
   const?: JsonPrimitive
   default?: JsonValue
   readOnly?: boolean
+  /** 字段级结构编辑规则：可选对象字段设为 false 时删除键；默认保留 false。 */
+  omitFalse?: boolean
   minItems?: number
   maxItems?: number
   minimum?: number
