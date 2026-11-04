@@ -98,17 +98,14 @@ export function MediaPicker({
             onClick={() => setRefresh((value) => value + 1)}
           />
           <FileButton
+            className={cls('upload')}
             accept='.png,.jpg,.jpeg,.webp,.svg'
             disabled={uploading || Boolean(adapter.unavailableReason)}
+            aria-busy={uploading}
             onFile={(file) => void upload(file)}>
-            {uploading ? (
-              <Loading label='上传图片中' />
-            ) : (
-              <>
-                <ImagePlus size={14} />
-                上传图片
-              </>
-            )}
+            <ImagePlus size={14} />
+            上传图片
+            {uploading && <Loading maskColor='#fff' label='上传图片中' />}
           </FileButton>
           <Button
             title='关闭图片选择'
@@ -129,24 +126,26 @@ export function MediaPicker({
             {error}
           </p>
         )}
-        {loading && <Loading className={cls('loading')} label='加载素材中' />}
         {!loading && !adapter.unavailableReason && !visible.length && (
           <p className={cls('hint')}>
             {search ? '没有匹配的图片' : '暂无图片，可上传后选择'}
           </p>
         )}
-        <div className={cls('grid')}>
-          {visible.map((item) => (
-            <Button
-              key={item.id}
-              className={cls('item')}
-              disabled={uploading || Boolean(adapter.unavailableReason)}
-              onClick={() => onSelect(item.url)}
-              title={item.name}>
-              <OssImage src={item.url} alt={item.name} className={cls('image')} />
-              <span>{item.name}</span>
-            </Button>
-          ))}
+        <div className={cls('assets')} aria-busy={loading}>
+          <div className={cls('grid')}>
+            {visible.map((item) => (
+              <Button
+                key={item.id}
+                className={cls('item')}
+                disabled={loading || uploading || Boolean(adapter.unavailableReason)}
+                onClick={() => onSelect(item.url)}
+                title={item.name}>
+                <OssImage src={item.url} alt={item.name} className={cls('image')} />
+                <span>{item.name}</span>
+              </Button>
+            ))}
+          </div>
+          {loading && <Loading label='加载素材中' />}
         </div>
       </div>
     </Dialog>
@@ -168,8 +167,12 @@ const cls = classes(css`
     font-size: 12px;
     line-height: 1.7;
   }
-  &-loading {
-    padding: 20px 0;
+  &-upload {
+    position: relative;
+  }
+  &-assets {
+    position: relative;
+    min-height: 120px;
   }
   &-error {
     color: #b54242;

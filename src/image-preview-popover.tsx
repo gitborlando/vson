@@ -77,9 +77,7 @@ export function ImagePreviewPopover({
         title='点击选择图片（仅本地预览）'
         onFile={select}>
         <span className={cls('preview')}>
-          {pending ? (
-            <Loading label='模拟上传中' />
-          ) : source && source !== failed ? (
+          {source && source !== failed ? (
             <OssImage
               src={source}
               alt={label}
@@ -89,7 +87,8 @@ export function ImagePreviewPopover({
           ) : (
             <Plus size={24} strokeWidth={1.5} aria-hidden='true' />
           )}
-          {preview && !pending && <span className={cls('badge')}>本地预览</span>}
+          {preview && <span className={cls('badge')}>本地预览</span>}
+          {pending && <Loading maskColor='#f0f1f4' label='模拟上传中' />}
         </span>
         {error && (
           <span className={cls('error')} role='alert'>
