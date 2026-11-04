@@ -1,24 +1,18 @@
 import { useEffect, useState } from 'react'
 
 const storageKey = 'vson:appearance'
-const defaults = { showAnnotations: true, fontSize: 12 }
+const defaults = { showAnnotations: true }
 
 const readAppearance = () => {
   try {
-    const saved: { showAnnotations?: unknown; fontSize?: unknown } | null =
-      JSON.parse(localStorage.getItem(storageKey) ?? 'null')
+    const saved: { showAnnotations?: unknown } | null = JSON.parse(
+      localStorage.getItem(storageKey) ?? 'null',
+    )
     return {
       showAnnotations:
         typeof saved?.showAnnotations === 'boolean'
           ? saved.showAnnotations
           : defaults.showAnnotations,
-      fontSize:
-        typeof saved?.fontSize === 'number' &&
-        Number.isInteger(saved.fontSize) &&
-        saved.fontSize >= 10 &&
-        saved.fontSize <= 24
-          ? saved.fontSize
-          : defaults.fontSize,
     }
   } catch {
     return defaults

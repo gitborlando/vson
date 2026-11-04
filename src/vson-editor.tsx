@@ -4,19 +4,24 @@ import {
   Braces,
   Code2,
   ListCollapse,
+  ListTree,
   MessageSquareText,
-  Minus,
-  Plus,
   WrapText,
 } from 'lucide-react'
-import { Button, Segments, classes, withCssVars } from '@workbench/ui'
+import { Button, Segments, classes } from '@workbench/ui'
 import { CodeView } from './code-view'
 import { editJson, inspectJson } from './document'
 import { JsonNode } from './json-node'
 import { MediaPicker } from './media-picker'
-import { pathLabel } from './schema'
+import { pathLabel, sameJson, valueAt } from './schema'
 import { useAppearance } from './use-appearance'
-import type { JsonPath, VsonInspection, VsonMediaAdapter, VsonSchema } from './types'
+import type {
+  JsonPath,
+  JsonValue,
+  VsonInspection,
+  VsonMediaAdapter,
+  VsonSchema,
+} from './types'
 
 export function VsonEditor({
   value,
@@ -40,8 +45,14 @@ export function VsonEditor({
   history?: { undo: () => void; redo: () => void }
 }) {
   const inspect = suppliedInspect ?? ((text: string) => inspectJson(text, schema))
-  const inspection = useMemo(() => inspect(value), [value, inspect])
+  const [structureDraft, setStructureDraft] = useState<{
+    text: string
+    source: string
+  }>()
+  const text = structureDraft?.text ?? value
+  const inspection = useMemo(() => inspect(text), [text, inspect])
   const [treeVersion, setTreeVersion] = useState(0)
+  const [expansion, setExpansion] = useState({ version: 0, open: true })
   const [appearance, setAppearance] = useAppearance()
   const [mediaTarget, setMediaTarget] = useState<{
     path: JsonPath
@@ -52,8 +63,9 @@ export function VsonEditor({
   const interactionRef = useRef(interaction)
   const fieldErrors = useRef(new Map<string, string>())
   const mediaError = useRef('')
-  const latest = useRef({ value, onChange })
-  latest.current = { value, onChange }
+  const draftError = useRef('')
+  const latest = useRef({ value: text, onChange })
+  latest.current = { value: text, onChange }
   const interact = (patch: Partial<typeof interaction>) => {
     const next = { ...interactionRef.current, ...patch }
     interactionRef.current = next
@@ -61,10 +73,53 @@ export function VsonEditor({
     onInteractionChange?.(next)
   }
   const reportErrors = () => {
-    const error = [...fieldErrors.current.values(), mediaError.current]
+    const error = [
+      ...fieldErrors.current.values(),
+      mediaError.current,
+      draftError.current,
+    ]
       .filter(Boolean)
       .join('；')
     if (error !== interactionRef.current.error) interact({ error })
+  }
+  const writeStructure = (next: string, result: VsonInspection) => {
+    if (structureDraft && structureDraft.source !== value) {
+      draftError.current = '原 JSON 已变化，请先放弃本轮结构修改再重试'
+      reportErrors()
+      return
+    }
+    if (result.issues.length) {
+      setStructureDraft({ text: next, source: value })
+      draftError.current = '结构修改尚未通过校验，请补全或放弃本轮修改'
+    } else {
+      setStructureDraft(undefined)
+      draftError.current = ''
+      latest.current.onChange(next)
+    }
+    reportErrors()
+  }
+  const changeStructure = (path: JsonPath, nextValue: JsonValue | undefined) => {
+    if (structureDraft && structureDraft.source !== value)
+      return '原 JSON 已变化，请先放弃本轮结构修改再重试'
+    if (sameJson(nextValue, valueAt(inspection.value, path))) return ''
+    const next = editJson(latest.current.value, path, nextValue)
+    const result = inspect(next)
+    const problems = result.issues.filter((issue) => {
+      const related = path
+        .slice(0, Math.min(path.length, issue.path.length))
+        .every((part, index) => part === issue.path[index])
+      return (
+        related ||
+        !inspection.issues.some(
+          (existing) =>
+            existing.message === issue.message &&
+            sameJson(existing.path, issue.path),
+        )
+      )
+    })
+    if (problems.length) return problems.map((issue) => issue.message).join('；')
+    writeStructure(next, result)
+    return ''
   }
   const format = () => {
     if (!inspection.syntaxValid || inspection.value === undefined) return
@@ -73,9 +128,6 @@ export function VsonEditor({
   return (
     <div
       className={cls()}
-      style={withCssVars(undefined, {
-        '--vson-font-size': `${appearance.fontSize}px`,
-      })}
       data-vson-editor
       onKeyDownCapture={(event) => {
         if (!history || interaction.error || !(event.ctrlKey || event.metaKey))
@@ -119,37 +171,6 @@ export function VsonEditor({
           ]}
         />
         <div className={cls('tools')}>
-          <div className={cls('font-size')} role='group' aria-label='编辑器字号'>
-            <Button
-              size={24}
-              icon={<Minus size={12} />}
-              title='缩小字号'
-              aria-label='缩小字号'
-              disabled={appearance.fontSize <= 10}
-              onClick={() =>
-                setAppearance((current) => ({
-                  ...current,
-                  fontSize: current.fontSize - 1,
-                }))
-              }
-            />
-            <output aria-live='polite' aria-label='当前字号'>
-              {appearance.fontSize}px
-            </output>
-            <Button
-              size={24}
-              icon={<Plus size={12} />}
-              title='放大字号'
-              aria-label='放大字号'
-              disabled={appearance.fontSize >= 24}
-              onClick={() =>
-                setAppearance((current) => ({
-                  ...current,
-                  fontSize: current.fontSize + 1,
-                }))
-              }
-            />
-          </div>
           {mode === 'structure' && (
             <Button
               size={24}
@@ -167,14 +188,34 @@ export function VsonEditor({
             />
           )}
           {mode === 'structure' && (
-            <Button
-              size={24}
-              icon={<ListCollapse size={13} />}
-              title='恢复默认展开层级'
-              aria-label='恢复默认展开层级'
-              disabled={Boolean(interaction.error)}
-              onClick={() => setTreeVersion((value) => value + 1)}
-            />
+            <>
+              <Button
+                size={24}
+                icon={<ListTree size={13} />}
+                title='全部展开'
+                aria-label='全部展开'
+                disabled={interaction.busy}
+                onClick={() =>
+                  setExpansion((current) => ({
+                    version: current.version + 1,
+                    open: true,
+                  }))
+                }
+              />
+              <Button
+                size={24}
+                icon={<ListCollapse size={13} />}
+                title='全部收起'
+                aria-label='全部收起'
+                disabled={interaction.busy || fieldErrors.current.size > 0}
+                onClick={() =>
+                  setExpansion((current) => ({
+                    version: current.version + 1,
+                    open: false,
+                  }))
+                }
+              />
+            </>
           )}
           <Button
             size={24}
@@ -186,6 +227,26 @@ export function VsonEditor({
           />
         </div>
       </div>
+      {structureDraft && (
+        <div className={cls('draft')} role='status'>
+          <span>
+            {structureDraft.source !== value
+              ? '原 JSON 已变化，请放弃本轮结构修改后重试'
+              : '当前修改待补全，通过校验后写入 JSON'}
+          </span>
+          <Button
+            size={24}
+            onClick={() => {
+              setStructureDraft(undefined)
+              draftError.current = ''
+              fieldErrors.current.clear()
+              setTreeVersion((version) => version + 1)
+              reportErrors()
+            }}>
+            放弃本轮修改
+          </Button>
+        </div>
+      )}
       <div className={cls('body')}>
         {mode === 'code' ? (
           <CodeView
@@ -203,18 +264,21 @@ export function VsonEditor({
               value={inspection.value}
               issues={inspection.issues}
               showAnnotations={appearance.showAnnotations}
+              expansion={expansion}
               onEditIssue={(path, error) => {
                 const key = JSON.stringify(path)
                 if (error) fieldErrors.current.set(key, error)
                 else fieldErrors.current.delete(key)
                 reportErrors()
               }}
-              onChange={(path, value) =>
-                onChange(editJson(latest.current.value, path, value))
-              }
+              onChange={changeStructure}
+              onAdd={(path, value) => {
+                const next = editJson(latest.current.value, path, value)
+                writeStructure(next, inspect(next))
+              }}
               onPickImage={
                 media
-                  ? (path, schema) => setMediaTarget({ path, schema, source: value })
+                  ? (path, schema) => setMediaTarget({ path, schema, source: text })
                   : undefined
               }
             />
@@ -237,7 +301,7 @@ export function VsonEditor({
               <code>{pathLabel(issue.path)}</code>
               <span>{issue.message}</span>
               {issue.from !== undefined && (
-                <small>第 {value.slice(0, issue.from).split('\n').length} 行</small>
+                <small>第 {text.slice(0, issue.from).split('\n').length} 行</small>
               )}
             </div>
           ))}
@@ -262,9 +326,14 @@ export function VsonEditor({
               reportErrors()
               return
             }
-            latest.current.onChange(
-              editJson(latest.current.value, mediaTarget.path, url),
-            )
+            const error = changeStructure(mediaTarget.path, url)
+            if (error) {
+              mediaError.current = error
+              reportErrors()
+              return
+            }
+            mediaError.current = ''
+            reportErrors()
             setMediaTarget(undefined)
           }}
         />
@@ -275,6 +344,7 @@ export function VsonEditor({
 
 const cls = classes(css`
   & {
+    --vson-font-size: 13px;
     --vson-font-family: 'Cascadia Code', Consolas, 'Microsoft YaHei', monospace;
     display: flex;
     flex-direction: column;
@@ -314,19 +384,16 @@ const cls = classes(css`
     margin-left: auto;
     color: #8e97a6;
   }
-  &-font-size {
-    display: inline-flex;
+  &-draft {
+    display: flex;
     align-items: center;
-    margin-right: 4px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-  }
-  &-font-size output {
-    min-width: 32px;
-    text-align: center;
-    font-size: 10px;
-    font-variant-numeric: tabular-nums;
-    color: #626e80;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: #897754;
+    background: #fffcf5;
+    border-bottom: 1px solid #f0e9d8;
   }
   &-body {
     flex: 1;

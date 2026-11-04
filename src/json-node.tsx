@@ -22,12 +22,15 @@ type NodeProps = {
   label?: string | number
   readOnly?: boolean
   showAnnotations: boolean
+  expansion: { version: number; open: boolean }
+  inline?: boolean
   removable?: boolean
   move?: (direction: -1 | 1) => void
   first?: boolean
   last?: boolean
   issues: VsonIssue[]
-  onChange: (path: JsonPath, value: JsonValue | undefined) => void
+  onChange: (path: JsonPath, value: JsonValue | undefined) => string
+  onAdd: (path: JsonPath, value: JsonValue) => void
   onPickImage?: (path: JsonPath, schema: VsonSchema) => void
   onEditIssue: (path: JsonPath, message: string) => void
 }
@@ -39,16 +42,33 @@ export function JsonNode({
   label,
   readOnly: inherited,
   showAnnotations,
+  expansion,
+  inline,
   removable,
   move,
   first,
   last,
   issues,
   onChange,
+  onAdd,
   onPickImage,
   onEditIssue,
 }: NodeProps) {
-  const [open, setOpen] = useState(path.length < 2)
+  const [localExpansion, setLocalExpansion] = useState({
+    version: expansion.version,
+    open: expansion.version ? expansion.open : !inline && path.length < 2,
+  })
+  const open =
+    localExpansion.version === expansion.version
+      ? localExpansion.open
+      : expansion.open
+  const toggle = () => setLocalExpansion({ version: expansion.version, open: !open })
+  const [actionError, setActionError] = useState('')
+  const change = (path: JsonPath, value: JsonValue | undefined) => {
+    const message = onChange(path, value)
+    setActionError(message)
+    return message
+  }
   const schema = resolveSchema(input ?? {}, value)
   const readOnly = Boolean(inherited || !input || schema.readOnly)
   const array = Array.isArray(value)
@@ -63,6 +83,8 @@ export function JsonNode({
   const missing = Object.entries(schema.properties ?? {}).filter(
     ([key, field]) => object && !Object.hasOwn(value, key) && !field.readOnly,
   )
+  const single = object && entries.length === 1
+  const foldable = container && entries.length > 0 && !single
   const problem = issues.filter((issue) => sameJson(issue.path, path))
   const variants = input?.anyOf
   const variant = variants?.findIndex((option) => matchesType(option, value)) ?? -1
@@ -82,25 +104,66 @@ export function JsonNode({
       )
       next = { ...next, ...preserved }
     }
-    onChange(path, next)
+    change(path, next)
   }
+  const renderChild = (
+    [key, child]: [string | number, JsonValue],
+    index: number,
+    inline = false,
+  ) => (
+    <JsonNode
+      key={key}
+      value={child}
+      schema={array ? itemSchema(schema, index) : propertySchema(schema, key)}
+      path={[...path, key]}
+      label={key}
+      readOnly={readOnly}
+      showAnnotations={showAnnotations}
+      expansion={expansion}
+      inline={inline}
+      removable={
+        array
+          ? !Array.isArray(schema.items) && entries.length > (schema.minItems ?? 0)
+          : !schema.required?.includes(String(key))
+      }
+      move={
+        array && !Array.isArray(schema.items)
+          ? (direction) => {
+              const next = [...value]
+              const target = index + direction
+              if (target < 0 || target >= next.length) return
+              ;[next[index], next[target]] = [next[target], next[index]]
+              change(path, next)
+            }
+          : undefined
+      }
+      first={index === 0}
+      last={index === entries.length - 1}
+      issues={issues}
+      onChange={onChange}
+      onAdd={onAdd}
+      onPickImage={onPickImage}
+      onEditIssue={onEditIssue}
+    />
+  )
   const summary =
     object && typeof value.name === 'string' ? value.name : `${entries.length} 项`
   const title = [schema.title, schema.description].filter(Boolean).join(' · ')
   return (
     <div
       className={cls()}
+      data-inline={inline || undefined}
       data-readonly={readOnly || undefined}
       data-invalid={Boolean(problem.length) || undefined}>
       <div className={cls('line')}>
-        {container ? (
+        {foldable ? (
           <Button
             className={cls('fold')}
             size={24}
             icon={open ? <Minus size={12} /> : <Plus size={12} />}
             aria-label={`${pathLabel(path)}${open ? '收起' : '展开'}`}
             aria-expanded={open}
-            onClick={() => setOpen(!open)}
+            onClick={toggle}
           />
         ) : (
           <span className={cls('spacer')} />
@@ -118,19 +181,29 @@ export function JsonNode({
           </span>
         )}
         {container ? (
-          <Button
-            className={cls('bracket')}
-            size={24}
-            onClick={() => setOpen(!open)}
-            title={title}>
-            {array ? '[' : '{'}
-            {!open && (
-              <>
-                <span className={cls('summary')}> {summary} </span>
-                {array ? ']' : '}'}
-              </>
-            )}
-          </Button>
+          single ? (
+            <>
+              <span className={cls('punctuation')}>{'{'}</span>
+              {renderChild(entries[0], 0, true)}
+              <span className={cls('punctuation')}>{'}'}</span>
+            </>
+          ) : !entries.length ? (
+            <span className={cls('punctuation')}>{array ? '[]' : '{}'}</span>
+          ) : (
+            <Button
+              className={cls('bracket')}
+              size={24}
+              onClick={toggle}
+              title={title}>
+              {array ? '[' : '{'}
+              {!open && (
+                <>
+                  <span className={cls('summary')}> {summary} </span>
+                  {array ? ']' : '}'}
+                </>
+              )}
+            </Button>
+          )
         ) : (
           <ScalarValue
             value={value}
@@ -170,7 +243,7 @@ export function JsonNode({
               onChange={(key) => {
                 const field = schema.properties?.[key]
                 if (!field) return
-                onChange([...path, key], initialValue(field))
+                onAdd([...path, key], initialValue(field))
               }}
             />
           )}
@@ -182,7 +255,7 @@ export function JsonNode({
                 icon={<Plus size={12} />}
                 title='添加项目'
                 aria-label={`${pathLabel(path)}添加项目`}
-                onClick={() => onChange(path, [...value, initialValue(arrayItem)])}
+                onClick={() => onAdd(path, [...value, initialValue(arrayItem)])}
               />
             )}
           {!readOnly && variants && (
@@ -219,7 +292,7 @@ export function JsonNode({
               icon={<Trash2 size={12} />}
               title='移除此字段或项目'
               aria-label={`${pathLabel(path)}移除`}
-              onClick={() => onChange(path, undefined)}
+              onClick={() => change(path, undefined)}
             />
           )}
         </div>
@@ -229,45 +302,15 @@ export function JsonNode({
           {issue.message}
         </p>
       ))}
-      {open && container && (
+      {actionError && (
+        <p role='alert' className={cls('error')}>
+          {actionError}
+        </p>
+      )}
+      {open && foldable && (
         <>
           <div className={cls('children')}>
-            {entries.map(([key, child], index) => (
-              <JsonNode
-                key={key}
-                value={child}
-                schema={
-                  array ? itemSchema(schema, index) : propertySchema(schema, key)
-                }
-                path={[...path, key]}
-                label={key}
-                readOnly={readOnly}
-                showAnnotations={showAnnotations}
-                removable={
-                  array
-                    ? !Array.isArray(schema.items) &&
-                      entries.length > (schema.minItems ?? 0)
-                    : !schema.required?.includes(String(key))
-                }
-                move={
-                  array && !Array.isArray(schema.items)
-                    ? (direction) => {
-                        const next = [...value]
-                        const target = index + direction
-                        if (target < 0 || target >= next.length) return
-                        ;[next[index], next[target]] = [next[target], next[index]]
-                        onChange(path, next)
-                      }
-                    : undefined
-                }
-                first={index === 0}
-                last={index === entries.length - 1}
-                issues={issues}
-                onChange={onChange}
-                onPickImage={onPickImage}
-                onEditIssue={onEditIssue}
-              />
-            ))}
+            {entries.map((entry, index) => renderChild(entry, index))}
           </div>
           <div className={cls('closing')}>{array ? ']' : '}'}</div>
         </>
@@ -279,6 +322,16 @@ export function JsonNode({
 const cls = classes(css`
   & {
     min-width: 0;
+  }
+  &[data-inline] {
+    display: inline-flex;
+    flex-direction: column;
+  }
+  &[data-inline] > &-line {
+    padding-right: 0;
+  }
+  &[data-inline] > &-line > &-spacer {
+    display: none;
   }
   &-line {
     display: flex;
