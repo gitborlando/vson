@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ark } from '@ark-ui/react/factory'
 import { css, cx } from '@emotion/css'
 import { classes, withCssVars } from './style-utils'
 
-/** 始终覆盖最近的定位容器；立即拦截点击，延迟显示动画和背景。 */
+/** 始终锁定最近的定位容器交互；颜色与延迟只控制视觉显示。 */
 export function Loading({
   boxed = false,
   maskColor = 'transparent',
@@ -19,6 +19,35 @@ export function Loading({
   className?: string
 }) {
   const [visible, setVisible] = useState(delay <= 0)
+  const mask = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const element = mask.current
+    const host = element?.offsetParent
+    if (!element || !(host instanceof HTMLElement)) return
+
+    const releases: (() => void)[] = []
+    let branch: Element = element
+    while (branch.parentElement) {
+      const parent = branch.parentElement
+      for (const sibling of parent.children) {
+        if (sibling !== branch) releases.push(lockContent(sibling))
+      }
+      if (parent === host) break
+      branch = parent
+    }
+    const block = (event: Event) => {
+      // 允许 Tab 离开当前区域，区域内的内容已通过 inert 移出焦点顺序。
+      if (event instanceof KeyboardEvent && event.key === 'Tab') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+    for (const event of blockedEvents)
+      host.addEventListener(event, block, { capture: true, passive: false })
+    return () => {
+      for (const event of blockedEvents) host.removeEventListener(event, block, true)
+      for (const release of releases) release()
+    }
+  }, [])
   useEffect(() => {
     setVisible(delay <= 0)
     if (delay <= 0) return
@@ -28,25 +57,54 @@ export function Loading({
 
   return (
     <ark.span
+      ref={mask}
       className={cx(cls(), className)}
       style={withCssVars(undefined, { '--loading-mask-color': maskColor })}
       data-visible={visible}
       role='status'
-      aria-label={label}
-      onPointerDown={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-      }}
-      onClick={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-      }}>
+      aria-label={label}>
       <span className={cls('indicator')} data-boxed={boxed} aria-hidden='true'>
         <span className={cls('spinner')} />
       </span>
     </ark.span>
   )
 }
+
+// 多个加载区域可能同时覆盖同一子树，最后一处释放后才恢复原状态。
+const locks = new WeakMap<Element, { count: number; inert: boolean }>()
+const lockContent = (element: Element) => {
+  const lock = locks.get(element) ?? {
+    count: 0,
+    inert: element.hasAttribute('inert'),
+  }
+  lock.count++
+  locks.set(element, lock)
+  element.setAttribute('inert', '')
+  return () => {
+    if (--lock.count) return
+    if (!lock.inert) element.removeAttribute('inert')
+    locks.delete(element)
+  }
+}
+
+const blockedEvents = [
+  'click',
+  'dblclick',
+  'auxclick',
+  'contextmenu',
+  'pointerdown',
+  'pointerup',
+  'pointermove',
+  'keydown',
+  'keyup',
+  'beforeinput',
+  'wheel',
+  'touchstart',
+  'touchmove',
+  'dragstart',
+  'dragover',
+  'drop',
+]
 
 const cls = classes(css`
   & {
@@ -59,6 +117,7 @@ const cls = classes(css`
     background: transparent;
     pointer-events: auto;
     touch-action: none;
+    user-select: none;
     cursor: wait;
     color: var(--color);
   }
