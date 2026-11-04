@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { css } from '@emotion/css'
 import { ImagePlus, Plus } from 'lucide-react'
-import { Button, FileButton, OssImage, Popover, classes } from '@workbench/ui'
+import {
+  Button,
+  FileButton,
+  Loading,
+  OssImage,
+  Popover,
+  classes,
+} from '@workbench/ui'
 
 export function ImagePreviewPopover({
   value,
@@ -71,7 +78,7 @@ export function ImagePreviewPopover({
         onFile={select}>
         <span className={cls('preview')}>
           {pending ? (
-            <span className={cls('spinner')} role='status' aria-label='模拟上传中' />
+            <Loading label='模拟上传中' />
           ) : source && source !== failed ? (
             <OssImage
               src={source}
@@ -119,19 +126,6 @@ const cls = classes(css`
   &-upload:disabled {
     opacity: 1;
     cursor: wait;
-  }
-  &-spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--color);
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: vson-image-preview-spin 0.7s linear infinite;
-  }
-  @keyframes vson-image-preview-spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
   &-preview {
     position: relative;

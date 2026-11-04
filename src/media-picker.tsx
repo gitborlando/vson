@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { css } from '@emotion/css'
 import { ImagePlus, RefreshCw, X } from 'lucide-react'
-import { Button, Dialog, FileButton, Input, OssImage, classes } from '@workbench/ui'
+import {
+  Button,
+  Dialog,
+  FileButton,
+  Input,
+  Loading,
+  OssImage,
+  classes,
+} from '@workbench/ui'
 import type { VsonMediaAdapter, VsonMediaItem } from './types'
 
 export function MediaPicker({
@@ -93,8 +101,14 @@ export function MediaPicker({
             accept='.png,.jpg,.jpeg,.webp,.svg'
             disabled={uploading || Boolean(adapter.unavailableReason)}
             onFile={(file) => void upload(file)}>
-            <ImagePlus size={14} />
-            {uploading ? '上传中…' : '上传图片'}
+            {uploading ? (
+              <Loading label='上传图片中' />
+            ) : (
+              <>
+                <ImagePlus size={14} />
+                上传图片
+              </>
+            )}
           </FileButton>
           <Button
             title='关闭图片选择'
@@ -115,7 +129,7 @@ export function MediaPicker({
             {error}
           </p>
         )}
-        {loading && <p className={cls('hint')}>加载素材中…</p>}
+        {loading && <Loading className={cls('loading')} label='加载素材中' />}
         {!loading && !adapter.unavailableReason && !visible.length && (
           <p className={cls('hint')}>
             {search ? '没有匹配的图片' : '暂无图片，可上传后选择'}
@@ -153,6 +167,9 @@ const cls = classes(css`
     color: var(--muted);
     font-size: 12px;
     line-height: 1.7;
+  }
+  &-loading {
+    padding: 20px 0;
   }
   &-error {
     color: #b54242;
