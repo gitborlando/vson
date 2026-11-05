@@ -1,4 +1,4 @@
-遵从 ../../agents.md 和 ../../ai/instructions/frontend.md。
+遵从本仓库根目录的 agents.md。
 
 - 公共 UI 不依赖编辑器、商户或商品模型。
 - 基于 Ark UI 封装交互，使用 Emotion 和公共设计变量。

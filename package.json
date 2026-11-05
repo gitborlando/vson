@@ -16,5 +16,38 @@
   "version": "0.0.0",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "description": "Shared React components built with Ark UI and Emotion",
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "simple-git-hooks",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "prettier": "^3.6.0",
+    "pretty-quick": "^4.2.2",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.9.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec pretty-quick --staged"
+  },
+  "prettier": {
+    "printWidth": 85,
+    "endOfLine": "lf",
+    "useTabs": false,
+    "tabWidth": 2,
+    "objectWrap": "collapse",
+    "bracketSameLine": true,
+    "semi": false,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
+    "trailingComma": "all"
   }
 }
