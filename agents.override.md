@@ -1,4 +1,4 @@
-遵从 ../../agents.md 和 ../../ai/instructions/frontend.md。
+遵从本仓库根目录的 agents.md。
 
 - 通用 Visual JSON 编辑器，不依赖商品、预设、账号或接口模型。
 - 字段规则由 schema 传入；素材通过适配器注入，包内不请求业务接口。

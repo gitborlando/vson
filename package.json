@@ -13,12 +13,45 @@
     "@codemirror/view": "^6.43.15",
     "@emotion/css": "^11.13.5",
     "@uiw/react-codemirror": "^4.25.3",
-    "@workbench/ui": "workspace:*",
+    "@workbench/ui": "file:../workbench-ui",
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^0.562.0"
   },
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
+  },
+  "description": "Schema-driven Visual JSON editor for React",
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "simple-git-hooks",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "prettier": "^3.6.0",
+    "pretty-quick": "^4.2.2",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.9.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec pretty-quick --staged"
+  },
+  "prettier": {
+    "printWidth": 85,
+    "endOfLine": "lf",
+    "useTabs": false,
+    "tabWidth": 2,
+    "objectWrap": "collapse",
+    "bracketSameLine": true,
+    "semi": false,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
+    "trailingComma": "all"
   }
 }
