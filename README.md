@@ -2,25 +2,21 @@
 
 独立的 React 源码包 `@workbench/vson`。以 JSON 结构展示数据，键不带引号、不显示分隔逗号；字段选中后编辑，代码视图仍使用标准 JSON。包内不包含商品、SKU、账号、业务存储或接口逻辑，也不直接修改业务文档。
 
-## 安装与独立仓库
+## 安装
 
-使用 Node.js 24+ 和 pnpm 9.12.2。将两个独立仓库放在同一父目录：
+使用 Node.js 24+ 和 pnpm 9.12.2。只需克隆本仓库并安装依赖：
 
-```text
-G:/
-  workbench-ui/  # @workbench/ui
-  vson/          # @workbench/vson
+```sh
+pnpm install
 ```
 
-VSON 通过 `file:../workbench-ui` 引用 UI 仓库，不再依赖原 monorepo 的 `workspace:*`。在 VSON 目录执行 `pnpm install`，pnpm 会同时解析本地 UI 包及其运行依赖，不要求先在 UI 仓库安装依赖；如果要独立开发 UI，则也在 UI 仓库执行 `pnpm install`。
+UI 已融合到 `src/ui`，由包内相对导入使用，不再是独立包，也不需要旁边的 UI 仓库。Ark UI 等运行依赖由 VSON 统一声明。
 
 安装时通过 `prepare` 注册 Git pre-commit hook，提交前只格式化暂存文件。默认不运行测试、构建、类型检查或服务。
 
-两个仓库的包名和公开 API 保持原样，均保留 `private: true` 和 TypeScript 源码入口；消费项目需要能够编译 TypeScript / TSX，当前未增加 npm 发布构建。React 和 React DOM 由消费项目提供。接入时可从 `@workbench/ui` 导入并调用一次 `installTheme()`，或由宿主提供同名主题变量。
+包名为 `@workbench/vson`，保留 `private: true` 和 TypeScript 源码入口；消费项目需要能够编译 TypeScript / TSX，当前未增加 npm 发布构建。React 和 React DOM 由消费项目提供。接入时可从 `@workbench/vson` 导入并调用一次 `installTheme()`，或由宿主提供同名主题变量；主题函数会注入全局基础样式，不自动执行。
 
-本地 `file:` 依赖由 pnpm 管理；修改 UI 后，在 VSON 仓库执行 `pnpm update @workbench/ui` 更新依赖副本和锁文件。迁移到其他电脑时，也需要并排克隆两个仓库；后续发布包或建立远程 Git 依赖时，再替换该地址。
-
-从 `ai-workbench/packages/vson` 提取的 18 条历史提交已保留，原提交与新提交映射见 [HISTORY.md](HISTORY.md)。`src/` 与提取时的源包一致，独立配置另作新提交。当前分支为 `main`，未设置远程地址；建立远程空仓库后可执行：
+VSON 和 UI 各自的 18 条原始相关历史均已保留在当前主分支中，独立配置提交也一并保留。原提交映射与合并方式见 [HISTORY.md](HISTORY.md) 和 [UI-HISTORY.md](UI-HISTORY.md)。当前分支为 `main`，未设置远程地址；建立远程空仓库后可执行：
 
 ```sh
 git remote add origin <新仓库地址>
@@ -58,7 +54,15 @@ function Example() {
 }
 ```
 
-父容器需要有可用高度；组件使用 flex 填充容器。样式复用 `@workbench/ui` 的主题变量和 Ark UI 控件；目前为源码包，尚未添加 npm 发布构建。
+在浏览器应用入口安装一次主题：
+
+```ts
+import { installTheme } from '@workbench/vson'
+
+installTheme()
+```
+
+父容器需要有可用高度；组件使用 flex 填充容器。样式与交互使用包内 UI 和 Ark UI 控件；目前为源码包，尚未添加 npm 发布构建。
 
 ## 能力和边界
 

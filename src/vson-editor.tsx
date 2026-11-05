@@ -8,7 +8,7 @@ import {
   MessageSquareText,
   WrapText,
 } from 'lucide-react'
-import { Button, Segments, classes } from '@workbench/ui'
+import { Button, Segments, classes } from './ui'
 import { CodeView } from './code-view'
 import { editJson, inspectJson } from './document'
 import { JsonNode, type FocusRequest } from './json-node'

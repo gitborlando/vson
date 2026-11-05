@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react'
 import { css } from '@emotion/css'
 import { ImagePlus, RefreshCw, X } from 'lucide-react'
-import {
-  Button,
-  Dialog,
-  FileButton,
-  Input,
-  Loading,
-  OssImage,
-  classes,
-} from '@workbench/ui'
+import { Button, Dialog, FileButton, Input, Loading, OssImage, classes } from './ui'
 import type { VsonMediaAdapter, VsonMediaItem } from './types'
 
 export function MediaPicker({

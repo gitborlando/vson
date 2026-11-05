@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react'
 import { css } from '@emotion/css'
 import { ImagePlus, Plus } from 'lucide-react'
-import {
-  Button,
-  FileButton,
-  Loading,
-  OssImage,
-  Popover,
-  classes,
-} from '@workbench/ui'
+import { Button, FileButton, Loading, OssImage, Popover, classes } from './ui'
 
 export function ImagePreviewPopover({
   value,

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { css } from '@emotion/css'
 import { CircleAlert, ImagePlus } from 'lucide-react'
-import { Button, Input, OssImage, Select, Switch, classes } from '@workbench/ui'
+import { Button, Input, OssImage, Select, Switch, classes } from './ui'
 import type { JsonValue, VsonSchema } from './types'
 import { ImagePreviewPopover } from './image-preview-popover'
 

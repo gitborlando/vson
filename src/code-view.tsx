@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror'
 import { json } from '@codemirror/lang-json'
 import { css } from '@emotion/css'
-import { classes } from '@workbench/ui'
+import { classes } from './ui'
 import { codeExtensions } from './code-extensions'
 import type { VsonInspection, VsonSchema } from './types'
 

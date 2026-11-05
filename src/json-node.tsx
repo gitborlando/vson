@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { css } from '@emotion/css'
 import { ArrowDown, ArrowUp, CircleAlert, Minus, Plus, Trash2 } from 'lucide-react'
-import { Button, Select, classes } from '@workbench/ui'
+import { Button, Select, classes } from './ui'
 import {
   initialValue,
   isObject,
