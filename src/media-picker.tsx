@@ -144,7 +144,7 @@ export function MediaPicker({
   )
 }
 
-const cls = classes(css`
+const cls = classes('media-picker')(css`
   & {
     display: grid;
     gap: 12px;

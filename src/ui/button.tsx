@@ -46,7 +46,7 @@ export const Button = forwardRef<
   },
 )
 
-const cls = classes(css`
+const cls = classes('button')(css`
   @layer local-components {
     & {
       display: inline-flex;

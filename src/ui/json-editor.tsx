@@ -1,7 +1,7 @@
 import { classes } from './style-utils'
 import CodeMirror from '@uiw/react-codemirror'
 import { json } from '@codemirror/lang-json'
-import { css } from '@emotion/css'
+import { css, cx } from '@emotion/css'
 export function JsonEditor({
   value,
   onChange,
@@ -18,12 +18,12 @@ export function JsonEditor({
       extensions={[json()]}
       readOnly={readOnly}
       basicSetup={{ foldGutter: true, lineNumbers: true, highlightActiveLine: true }}
-      className={cls('code-mirror')}
+      className={cx(cls(), cls('code-mirror'))}
     />
   )
 }
 
-const cls = classes(css`
+const cls = classes('json-editor')(css`
   &-code-mirror {
     font-size: 12px;
     border: 1px solid var(--border);

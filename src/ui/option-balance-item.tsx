@@ -62,7 +62,7 @@ export const OptionBalanceItem = forwardRef<HTMLDivElement, OptionBalanceItemPro
     )
   },
 )
-const cls = classes(css`
+const cls = classes('option-balance-item')(css`
   @layer local-components {
     & {
       display: flex;

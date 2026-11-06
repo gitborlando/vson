@@ -38,7 +38,7 @@ export function CodeView({
   )
 }
 
-const cls = classes(css`
+const cls = classes('code-view')(css`
   & {
     height: 100%;
     min-height: 0;

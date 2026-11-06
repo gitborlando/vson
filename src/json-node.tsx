@@ -404,7 +404,7 @@ export function JsonNode({
   )
 }
 
-const cls = classes(css`
+const cls = classes('json-node')(css`
   & {
     min-width: 0;
   }

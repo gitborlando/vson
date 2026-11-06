@@ -102,21 +102,27 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
         }}
         className={cx(cls(), className)}
         {...rest}>
-        <ArkSelect.Control>
+        <ArkSelect.Control className={cls('control')}>
           {trigger ? (
-            <ArkSelect.Trigger aria-label={label} asChild>
+            <ArkSelect.Trigger
+              aria-label={label}
+              className='vson-select-trigger'
+              asChild>
               {trigger}
             </ArkSelect.Trigger>
           ) : (
             <ArkSelect.Trigger aria-label={label} className={cls('trigger')}>
-              <ArkSelect.ValueText placeholder={placeholder} />
+              <ArkSelect.ValueText
+                className={cls('value-text')}
+                placeholder={placeholder}
+              />
               <ArkSelect.Indicator className={cls('indicator')}>
                 <Lucide icon={ChevronDown} size={14} />
               </ArkSelect.Indicator>
             </ArkSelect.Trigger>
           )}
         </ArkSelect.Control>
-        <ArkSelect.HiddenSelect />
+        <ArkSelect.HiddenSelect className={cls('hidden-select')} />
         <Portal>
           <ArkSelect.Positioner
             className={cls('positioner')}
@@ -146,7 +152,7 @@ export const Select = forwardRef<HTMLDivElement, SelectOptionProps>(
   },
 )
 
-const cls = classes(css`
+const cls = classes('select')(css`
   @layer local-components {
     & {
       width: 100%;

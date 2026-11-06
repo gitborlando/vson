@@ -44,7 +44,7 @@ export function NumberField({
     </NumberInput.Root>
   )
 }
-const cls = classes(css`
+const cls = classes('number-field')(css`
   & {
     display: flex;
     align-items: center;

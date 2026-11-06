@@ -35,7 +35,7 @@ export function Dialog({
     </ArkDialog.Root>
   )
 }
-const cls = classes(css`
+const cls = classes('dialog')(css`
   &-backdrop {
     position: fixed;
     inset: 0;

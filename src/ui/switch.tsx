@@ -21,15 +21,20 @@ export function Switch({
       disabled={disabled}
       onCheckedChange={(details) => onChange(details.checked)}
       className={cls()}>
-      {children && <ArkSwitch.Label>{children}</ArkSwitch.Label>}
+      {children && (
+        <ArkSwitch.Label className={cls('label')}>{children}</ArkSwitch.Label>
+      )}
       <ArkSwitch.Control className={cls('control')}>
         <ArkSwitch.Thumb className={cls('thumb')} />
       </ArkSwitch.Control>
-      <ArkSwitch.HiddenInput aria-label={ariaLabel} />
+      <ArkSwitch.HiddenInput
+        className={cls('hidden-input')}
+        aria-label={ariaLabel}
+      />
     </ArkSwitch.Root>
   )
 }
-const cls = classes(css`
+const cls = classes('switch')(css`
   & {
     display: flex;
     align-items: center;

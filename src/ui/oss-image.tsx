@@ -1,3 +1,4 @@
+import { cx } from '@emotion/css'
 import {
   useLayoutEffect,
   useMemo,
@@ -43,6 +44,7 @@ export function OssImage({
   src = '',
   resolutionScale = 1,
   onError,
+  className,
   ...props
 }: Omit<ComponentProps<'img'>, 'srcSet' | 'sizes'> & { resolutionScale?: number }) {
   const image = useRef<HTMLImageElement>(null)
@@ -93,6 +95,7 @@ export function OssImage({
   return (
     <img
       {...props}
+      className={cx('vson-oss-image', className)}
       ref={image}
       src={requested || undefined}
       onError={(event) => {

@@ -75,11 +75,11 @@ export function BottomSheet({
               start.current = undefined
               setOffset(0)
             }}>
-            <span />
+            <span className={cls('handle-thumb')} />
           </div>
           <header className={cls('header')}>
-            <ArkDialog.Title>{title}</ArkDialog.Title>
-            <ArkDialog.CloseTrigger asChild>
+            <ArkDialog.Title className={cls('title')}>{title}</ArkDialog.Title>
+            <ArkDialog.CloseTrigger className={cls('close-trigger')} asChild>
               <Button
                 title='关闭面板'
                 aria-label='关闭面板'
@@ -96,7 +96,7 @@ export function BottomSheet({
   )
 }
 
-const cls = classes(css`
+const cls = classes('bottom-sheet')(css`
   &-backdrop {
     position: absolute;
     inset: 0;

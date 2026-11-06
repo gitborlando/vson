@@ -34,19 +34,21 @@ export function Popover({
         fitViewport: true,
         overflowPadding: 12,
       }}>
-      <ArkPopover.Trigger asChild>{trigger}</ArkPopover.Trigger>
+      <ArkPopover.Trigger className={cls('trigger')} asChild>
+        {trigger}
+      </ArkPopover.Trigger>
       <Portal>
         <ArkPopover.Positioner className={cls('positioner')}>
           <ArkPopover.Content className={cx(cls(), className)}>
             {showHeader ? (
               <div className={cls('header')}>
-                <ArkPopover.Title>{title}</ArkPopover.Title>
-                <ArkPopover.CloseTrigger asChild>
+                <ArkPopover.Title className={cls('title')}>{title}</ArkPopover.Title>
+                <ArkPopover.CloseTrigger className={cls('close-trigger')} asChild>
                   <Button title='关闭' aria-label='关闭' icon={<X size={14} />} />
                 </ArkPopover.CloseTrigger>
               </div>
             ) : (
-              <ArkPopover.Title className={cls('hidden-title')}>
+              <ArkPopover.Title className={cx(cls('title'), cls('hidden-title'))}>
                 {title}
               </ArkPopover.Title>
             )}
@@ -58,7 +60,7 @@ export function Popover({
   )
 }
 
-const cls = classes(css`
+const cls = classes('popover')(css`
   &-positioner {
     z-index: 900;
   }

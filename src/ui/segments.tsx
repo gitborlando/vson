@@ -74,7 +74,7 @@ export const Segments = forwardRef<
             <SegmentGroup.ItemText className={cls('item-text')}>
               {option.label}
             </SegmentGroup.ItemText>
-            <SegmentGroup.ItemHiddenInput />
+            <SegmentGroup.ItemHiddenInput className={cls('item-hidden-input')} />
           </SegmentGroup.Item>
         ))}
         <SegmentGroup.Indicator className={cls('indicator')} />
@@ -83,7 +83,7 @@ export const Segments = forwardRef<
   },
 )
 
-const cls = classes(css`
+const cls = classes('segments')(css`
   @layer local-components {
     & {
       width: fit-content;

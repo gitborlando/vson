@@ -106,7 +106,7 @@ const blockedEvents = [
   'drop',
 ]
 
-const cls = classes(css`
+const cls = classes('loading')(css`
   & {
     position: absolute;
     inset: 0;

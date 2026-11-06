@@ -64,6 +64,22 @@ installTheme()
 
 父容器需要有可用高度；组件使用 flex 填充容器。样式与交互使用包内 UI 和 Ark UI 控件；目前为源码包，尚未添加 npm 发布构建。
 
+## 样式覆盖
+
+编辑器和 UI 提供稳定的 `vson-` 前缀类名，例如 `.vson-editor`、`.vson-button`、`.vson-button-solid`、`.vson-switch-control`。部件和变体沿用 `vson-组件名-后缀`，宿主页无需依赖 Emotion 生成的类名；原有默认样式和 `local-components` 分层保持不变。
+
+```css
+.vson-button {
+  border-radius: 4px;
+}
+
+.vson-select-content {
+  max-height: 320px;
+}
+```
+
+下拉、弹窗和 Popover 的浮层也自带前缀，例如 `.vson-select-content`、`.vson-dialog-content`、`.vson-popover`；它们可能挂到 `body`，覆盖时不能只依赖 `.vson-editor` 的后代选择器。宿主页的全局 reset 应放在低于 `local-components` 的 layer 中，避免重置组件间距等默认样式。
+
 ## 能力和边界
 
 - `value` 是唯一的文本源，两种视图共享；合法结构编辑通过 JSON 路径修改文本，保留无关字段和原排版。

@@ -7,7 +7,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ComponentProps<'textarea
     <ark.textarea ref={ref} className={cx(cls(), className)} {...props} />
   ),
 )
-const cls = classes(css`
+const cls = classes('textarea')(css`
   & {
     width: 100%;
     padding: 9px;

@@ -93,7 +93,7 @@ export function ImagePreviewPopover({
   )
 }
 
-const cls = classes(css`
+const cls = classes('image-preview-popover')(css`
   & {
     width: min(256px, calc(100vw - 24px));
     border-radius: 8px;

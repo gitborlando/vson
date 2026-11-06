@@ -37,7 +37,7 @@ export function Tabs({
     </ArkTabs.Root>
   )
 }
-const cls = classes(css`
+const cls = classes('tabs')(css`
   & {
     display: flex;
     flex-direction: column;

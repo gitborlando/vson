@@ -25,7 +25,7 @@ const LucideComp: FC<LucideProps & { icon: LucideIcon; active?: boolean }> = ({
 
 export const Lucide = Object.assign(LucideComp, LucideReact)
 
-const cls = classes(css`
+const cls = classes('lucide')(css`
   cursor: pointer;
   &[data-active='true'] {
     color: var(--color);

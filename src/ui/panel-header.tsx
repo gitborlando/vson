@@ -21,7 +21,7 @@ export function PanelHeader({
     </header>
   )
 }
-const cls = classes(css`
+const cls = classes('panel-header')(css`
   & {
     min-height: 36px;
     padding: 7px 10px;

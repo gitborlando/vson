@@ -7,7 +7,7 @@ export const Input = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
     <ark.input ref={ref} className={cx(cls(), className)} {...props} />
   ),
 )
-const cls = classes(css`
+const cls = classes('input')(css`
   & {
     width: 100%;
     height: 30px;

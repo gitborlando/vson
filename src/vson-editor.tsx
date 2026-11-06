@@ -426,7 +426,7 @@ export function VsonEditor({
   )
 }
 
-const cls = classes(css`
+const cls = classes('editor')(css`
   & {
     --vson-font-size: 13px;
     --vson-font-family: 'Cascadia Code', Consolas, 'Microsoft YaHei', monospace;

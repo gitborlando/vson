@@ -126,7 +126,7 @@ export const CommitInput = forwardRef<HTMLInputElement, CommitInputProps>(
   },
 )
 
-const cls = classes(css`
+const cls = classes('commit-input')(css`
   @layer local-components {
     & {
       display: inline-flex;

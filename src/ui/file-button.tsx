@@ -1,5 +1,6 @@
 import { useRef, type ReactNode, type ComponentProps } from 'react'
 import { ark } from '@ark-ui/react/factory'
+import { cx } from '@emotion/css'
 import { Button } from './button'
 export function FileButton({
   children,
@@ -7,6 +8,7 @@ export function FileButton({
   onFile,
   disabled,
   size,
+  className,
   ...buttonProps
 }: {
   children: ReactNode
@@ -20,12 +22,14 @@ export function FileButton({
     <>
       <Button
         {...buttonProps}
+        className={cx('vson-file-button', className)}
         size={size}
         disabled={disabled}
         onClick={() => ref.current?.click()}>
         {children}
       </Button>
       <ark.input
+        className='vson-file-button-input'
         ref={ref}
         type='file'
         accept={accept}

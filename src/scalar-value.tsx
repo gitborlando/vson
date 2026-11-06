@@ -207,7 +207,7 @@ export function ScalarValue({
   )
 }
 
-const cls = classes(css`
+const cls = classes('scalar-value')(css`
   & {
     display: inline-flex;
     align-items: center;
